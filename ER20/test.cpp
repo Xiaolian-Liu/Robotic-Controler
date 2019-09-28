@@ -1,47 +1,48 @@
 #include "er20.h"
-#include "iostream"
+#include <iostream>
+using namespace std;
 
 int main(void)
 {
-	double theta[2][7] =
+	const double jointangle[5][6] =
 	{
-		{0,0,PI/2,0,0,0,0,},
-		{0,PI/2,PI/2,0,PI/2,PI/2,0}
+		{0,			0,			0,			0,			0,			0},
+		{-21.179,	41.862,		-39.407,	26.328,		20.561,		41.544},
+		{9.11,		23.169,		-39.407,	26.328,		20.561,		41.544},
+		{15.318,	29.978,		-36.999,	45.869,		23.620,		41.543},
+		{12.405,	25.226,		-55.917,	75.108,		1.179,		273.720}
 	};
-	cartpos_t respos[2] = 
+	const cartpos_t cartposes[5] = 
 	{
-		{0,0,0,0,0,0},
-		{0,0,0,0,0,0}
-	};  //attention, this place can't be cartpos_t * respos[2]
-	
-	for (int i = 0; i < 2; i++)
+		{1053.855,		0.301,		1425.886,		0,			90,			-180},
+		{474.063,		-204.273,	1303.171,		-30.769,	69.231,		-110.169},
+		{747.159,		100.396,	1149.687,		0.142,		87.684,		-113.232},
+		{653.419,		142.021,	1247.954,		-1.634,		80.508,		-92.216},
+		{653.441,		142.033,	880.380,		11.130,		120.381,	168.157}
+	};  //attention, this place can't be cartpos_t * respos[5]
+
+	cartpos_t resposes[5];
+	double resjoinangl[5][6];
+
+
+	for (int i = 0; i < 5; i++)
 	{
-		if (-1 == trans(theta[i], &respos[i]))
-		{
-			std::cout << " forward kenimatics error" << std::endl;
-			continue;
-		}
-		jointspace_show(theta[i]);
-		cartspace_show(respos[i]);
+		jointangle_show(jointangle[i]);
+		int axies;
+		if (axies = forkine(jointangle[i], resposes + i))
+			cout << " forward kenimatics error, axis " << axies << "beyound limits" << endl;
+		else
+			cartpose_show(resposes[i]);
 	}
+	double defalastjoinangl[6] = { 0, 0, 0, 0, 0, 0};
 
-	cartpos_t cartpos[2] = 
+	for (int i = 0; i < 5; i++)
 	{
-		{1230,0,920,0,0,0},
-		{300,930,920,PI/2,0,0}
-	};
-	double restheta[2][7] = { {0},{0} };
-	double defalasttheta[2][7] = { { 0, 0, PI / 2, 0, 0, 0, 0 },	{ 0, PI / 2, PI / 2, 0, PI / 2, PI / 2, 0 } };
-
-	for (int i = 0; i < 2; i++)
-	{
-		if (-1 == invtrans(cartpos[i], defalasttheta[i], restheta[i]))
-		{
-			std::cout << " inverse kenimatics error" << std::endl;
-			continue;
-		}
-		cartspace_show(cartpos[i]);
-		jointspace_show(restheta[i]);
+		cartpose_show(cartposes[i]);
+		if (invkine(cartposes[i], defalastjoinangl, resjoinangl[i]))
+			cout << " inverse kenimatics error, the pose beyound limits" << endl;
+		else
+			jointangle_show(resjoinangl[i]);
 	}
 	std::cin.get();
 }

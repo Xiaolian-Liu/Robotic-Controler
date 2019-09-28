@@ -3,59 +3,131 @@
 #include <iostream>
 #include <iomanip>
 #include "Eigen/Dense"
+#include "kinematics.h"
 
 using namespace Eigen;
+using namespace std;
 
-const double MAX_Theta[6] =
+const double a1 = ER20_a1;
+const double d1 = ER20_d1;
+const double a2 = ER20_a2;
+const double a3 = ER20_a3;
+const double d3 = ER20_d3;
+const double d4 = ER20_d4;
+const double d6 = ER20_d6;
+
+const double MAX_jointangle[6] =
 {
-	90 * PI / 180,
-	154 * PI / 180,
-	165 * PI / 180,
-	178 * PI / 180,
-	132 * PI / 180,
-	180 * PI / 180
+	90 ,
+	64 ,
+	165 ,
+	178 ,
+	132 ,
+	180 
 };
-const double MIN_Theta[6] =
+const double MIN_jointangle[6] =
 {
-	-90 * PI / 180,
-	-52 * PI / 180,
-	-73 * PI / 180,
-	-178 * PI / 180,
-	-132 * PI / 180,
-	-180 * PI / 180
+	-90 ,
+	-142 ,
+	-73 ,
+	-178 ,
+	-132 ,
+	-180 
 };
+const double theta_offset[6] =
+{
+	0,
+	PI / 2,
+	0,
+	0,
+	0,
+	0
+};
+
+double degree2rad(double angle)
+{
+	return (angle * PI / 180);
+}
+double rad2degree(double theta)
+{
+	return (theta * 180 / PI);
+}
+void jointangle2theta(const double joinang[6], double theta[6])
+{
+	int i;
+	for (i = 0; i < 6; i++)
+	{
+		theta[i] = degree2rad(joinang[i]) + theta_offset[i];
+	}
+}
+void theta2jointangle(const double theta[6], double joinang[6])
+{
+	int i;
+	for (i = 0; i < 6; i++)
+	{
+		joinang[i] = rad2degree(theta[i]- theta_offset[i]);
+	}
+}
+const double MAX_theta[6] =
+{
+	degree2rad(MAX_jointangle[0]) + theta_offset[0],
+	degree2rad(MAX_jointangle[1]) + theta_offset[1],
+	degree2rad(MAX_jointangle[2]) + theta_offset[2],
+	degree2rad(MAX_jointangle[3]) + theta_offset[3],
+	degree2rad(MAX_jointangle[4]) + theta_offset[4],
+	degree2rad(MAX_jointangle[5]) + theta_offset[5]
+};
+const double MIN_theta[6] =
+{
+	degree2rad(MIN_jointangle[0]) + theta_offset[0],
+	degree2rad(MIN_jointangle[1]) + theta_offset[1],
+	degree2rad(MIN_jointangle[2]) + theta_offset[2],
+	degree2rad(MIN_jointangle[3]) + theta_offset[3],
+	degree2rad(MIN_jointangle[4]) + theta_offset[4],
+	degree2rad(MIN_jointangle[5]) + theta_offset[5]
+};
+
 const double ER20_Weig[6] = { 0.2, 0.3, 0.2, 0.15, 0.1, 0.5 };
-int trans(const double theta[], cartpos_t *pos)
+
+int forkine(const double jointangle[6], cartpos_t *pos)
 {
-	for (int i = 1; i < 6; i++)
-		if ((theta[i+1] < MIN_Theta[i]) || (theta[i+1] > MAX_Theta[i]))
-			return -1;
-	
-	double theta23 = theta[2] + theta[3];
+	int i;
+	for (i = 0; i < 6; i++)
+	{
+		if ((jointangle[i] < MIN_jointangle[i]) || (jointangle[i] > MAX_jointangle[i]))
+			return (i+1);
+	}
+	double ta[7]; // the theta for D-H method, 7 numbers, 1th-6th  are useed, abandon the first
+	double teta[6];
+	jointangle2theta(jointangle, teta);
+	for (i = 0; i < 6; i++)
+		ta[i + 1] = teta[i];
+
+	double ta23 = ta[2] + ta[3];
 	Matrix3d R30, R63, R60, R70, R76;
 	Vector3d P30, P63, P60;
 
-	R30 << cos(theta[1])*cos(theta23), sin(theta[1]), cos(theta[1])*sin(theta23),
-		   sin(theta[1])*cos(theta23), -cos(theta[1]), sin(theta[1])*sin(theta23),
-		   sin(theta23),               0,              -cos(theta23);
+	R30 << cos(ta[1])*cos(ta23), sin(ta[1]), cos(ta[1])*sin(ta23),
+		   sin(ta[1])*cos(ta23), -cos(ta[1]), sin(ta[1])*sin(ta23),
+		   sin(ta23),               0,              -cos(ta23);
 	
 	
 	P30 <<
-		cos(theta[1])*(ER20_a1 +ER20_a2 * cos(theta[2]) + ER20_a3 * cos(theta23)),
-		sin(theta[1])*(ER20_a1 + ER20_a2 * cos(theta[2]) + ER20_a3 * cos(theta23)),
-		ER20_a2*sin(theta[2]) + ER20_a3 * sin(theta23);
+		cos(ta[1])*(a1+a2*cos(ta[2])+a3*cos(ta23)) + sin(ta[1])*d3,
+		sin(ta[1])*(a1+a2*cos(ta[2])+a3*cos(ta23)) - cos(ta[1])*d3,
+		a2*sin(ta[2]) + a3*sin(ta23) + d1;
 	
 	
 	R63 <<
-		cos(theta[4])*cos(theta[5])*cos(theta[6])-sin(theta[4])*sin(theta[6]),	-cos(theta[4])*cos(theta[5])*sin(theta[6])-sin(theta[4])*cos(theta[6]),	cos(theta[4])*sin(theta[5]),
-		sin(theta[4])*cos(theta[5])*cos(theta[6])+cos(theta[4])*sin(theta[6]),	-sin(theta[4])*cos(theta[5])*sin(theta[6])+cos(theta[4])*cos(theta[6]),	sin(theta[4])*sin(theta[5]),
-		-sin(theta[5])*cos(theta[6]),											sin(theta[5])*sin(theta[6]),											cos(theta[5]);
+		cos(ta[4])*cos(ta[5])*cos(ta[6])-sin(ta[4])*sin(ta[6]),	-cos(ta[4])*cos(ta[5])*sin(ta[6])-sin(ta[4])*cos(ta[6]),	cos(ta[4])*sin(ta[5]),
+		sin(ta[4])*cos(ta[5])*cos(ta[6])+cos(ta[4])*sin(ta[6]),	-sin(ta[4])*cos(ta[5])*sin(ta[6])+cos(ta[4])*cos(ta[6]),	sin(ta[4])*sin(ta[5]),
+		-sin(ta[5])*cos(ta[6]),											sin(ta[5])*sin(ta[6]),											cos(ta[5]);
 	
 
 	P63 <<
-		ER20_d6 * cos(theta[4])*sin(theta[5]),
-		ER20_d6*sin(theta[4])*sin(theta[5]),
-		ER20_d6*cos(theta[5]) + ER20_d4;
+		d6 * cos(ta[4])*sin(ta[5]),
+		d6*sin(ta[4])*sin(ta[5]),
+		d6*cos(ta[5]) + d4;
 
 	R60 = R30 * R63;
 	P60 = R30 * P63 + P30;
@@ -64,32 +136,38 @@ int trans(const double theta[], cartpos_t *pos)
 	pos->pe[1] = P60(1);
 	pos->pe[2] = P60(2);
 	
-	R76 <<	0,  0, 1,
-			0, -1, 0,
-			1,  0, 0;
+	R76 <<	1,  0, 0,
+			0,  1, 0,
+			0,  0, 1;
 	R70 = R60 * R76;
 
-	double r31 = R70(2, 0);
+	/*
 	double r11 = R70(0, 0);
 	double r21 = R70(1, 0);
+	double r23 = R70(1, 2);
+	double r13 = R70(0, 2);
+	double r31 = R70(2, 0);
 	double r32 = R70(2, 1);
 	double r33 = R70(2, 2);
-	double r12 = R70(0, 1);
-	double r22 = R70(1, 1);
 
 	double cosRy0 = sqrt(r11*r11 + r21*r21);
-	if (0 == cosRy0)
+	if (cosRy0 < 1e-6) //estimate if cpsRy0 = 0
 	{
-		pos->Ry0 = PI / 2;
-		pos->Rz0 = 0;
-		pos->Rx0 = atan2(r12, r22);
+		pos->Ry0 = rad2degree(atan2(-r31, 0));
+		pos->Rz0 = rad2degree(atan2(-r31*r23, -r31*r13));
+		pos->Rx0 = 0;
 	}
 	else
 	{
-		pos->Ry0 = atan2(-r31, cosRy0);
-		pos->Rz0 = atan2(r21, r11);
-		pos->Rx0 = atan2(r32, r33);
+		pos->Ry0 = rad2degree(atan2(-r31, cosRy0));
+		pos->Rz0 = rad2degree(atan2(r21, r11));
+		pos->Rx0 = rad2degree(atan2(r32, r33));
 	}
+	*/
+	Vector3d eul = tr2eul(R70,'d');
+	pos->Rx0 = eul(0);
+	pos->Ry0 = eul(1);
+	pos->Rz0 = eul(2);
 
 #if ER20CTEST
 
@@ -105,26 +183,36 @@ int trans(const double theta[], cartpos_t *pos)
 	return 0;
 };
 	
-int invtrans(const cartpos_t &pos, const double lasttheta[7], double theta[7])
+int invkine(const cartpos_t &pos, const double lastjointangle[6], double jointangle[6])
 {
 	int i, j;
 	Matrix3d R70, R76, Re;
 	Vector3d ae,Pw,Pe;
-	double a = pos.Rz0, B = pos.Ry0, y = pos.Rx0;
+	double lasttheta[6];
+	jointangle2theta(lastjointangle, lasttheta);
+	/* tansfer the degree uint to rad uint */
+	/*
+	double a = degree2rad(pos.Rz0);
+	double B = degree2rad(pos.Ry0);
+	double y = degree2rad(pos.Rx0);
+
 	R70 << cos(a)*cos(B), cos(a)*sin(B)*sin(y) - sin(a)*cos(y), cos(a)*sin(B)*cos(y) + sin(a)*sin(y),
 		  sin(a)*cos(B), sin(a)*sin(B)*sin(y) + cos(a)*cos(y), sin(a)*sin(B)*cos(y) - cos(a)*sin(y),
 		  -sin(B),       cos(B)*sin(y),                        cos(B)*cos(y);
-	
-	R76 << 0, 0, 1,
-		   0, -1, 0,
-		   1, 0, 0;
+	*/
+	Vector3d eul;
+	eul << pos.Rx0, pos.Ry0, pos.Rz0;
+	R70 = eul2ro(eul,'d');
+	R76 << 1, 0, 0,
+		   0, 1, 0,
+		   0, 0, 1;
 	Re = R70 * R76.transpose();
 
 	for (i = 0; i < 3; i++)
 		Pe(i) = pos.pe[i];
 
 	ae = Re.col(2);
-	Pw = Pe - ER20_d6 * ae;
+	Pw = Pe - d6 * ae;
 	double pwx = Pw(0);
 	double pwy = Pw(1);
 	double pwz = Pw(2);
@@ -137,25 +225,24 @@ int invtrans(const cartpos_t &pos, const double lasttheta[7], double theta[7])
 	std::cout << Pw << std::endl;
 #endif
 
-	static double l34 = sqrtf(ER20_a3*ER20_a3 + ER20_d4*ER20_d4);
-	static double l234 = ER20_a2* ER20_a2 + ER20_a3* ER20_a3 + ER20_d4* ER20_d4;
-	static double deta34 = atan((float)ER20_d4 / ER20_a3);
-	static double a2l34 = 2 * ER20_a2 * l34;
-	double lxy[2] = { sqrt(pwx*pwx + pwy * pwy), -sqrt(pwx*pwx + pwy * pwy) };
-	double lxy0[2] = { lxy[0] - ER20_a1, lxy[1] - ER20_a1 };
-
+	static double l34 = sqrt(a3*a3 + d4*d4);
+	static double a22 = a2 * a2;
+	static double l342 = a3 * a3 + d4 * d4;
+	static double da2l34 = 2 * a2*l34;
+	static double deta34 = atan((double)d4 / a3);
+	double lxy[2] = { sqrt(pwx*pwx + pwy*pwy - d3*d3), -sqrt(pwx*pwx + pwy*pwy - d3*d3) };
+	double alpha[2] = { atan2(d3,lxy[0]), atan2(d3,lxy[1]) };
 	double theta1[2] = { lasttheta[1], lasttheta[1] };
-	if ((pwx != 0) || (pwy != 0))
+	if ((abs(pwx)>1e-6) || (abs(pwy)>1e-6))  // pwx, pwy != 0
 	{
-		theta1[0] = atan2(pwy, pwx);
-		theta1[1] = atan2(-pwy, -pwx);
+		for (i = 0; i < 2; i++)
+			theta1[i] = atan2(pwy, pwx) + alpha[i];
 	}
 
-	double cosbeta3[2] =
-	{
-		((lxy0[0] * lxy0[0] + pwz * pwz - l234) / a2l34) ,
-		((lxy0[1] * lxy0[1] + pwz * pwz - l234) / a2l34)
-	};
+	double cosbeta3[2];
+	for (i = 0; i < 2; i++)
+		cosbeta3[i] = ( (lxy[0]-a1)*(lxy[0]-a1) + (pwz-d1)*(pwz-d1) - a22 - l342 ) / da2l34 ;
+
 	double sinbeta3[4] =
 	{ 
 		sqrt(1 - cosbeta3[0] * cosbeta3[0]), 
@@ -174,13 +261,13 @@ int invtrans(const cartpos_t &pos, const double lasttheta[7], double theta[7])
 		theta3[i] = beta3[i] + deta34;
 	}
 
-	static double a22 = ER20_a2 * ER20_a2;
-	static double l342 = ER20_a3 * ER20_a3 + ER20_d4 * ER20_d4;
+	
+	
 	double costheta2[4], sintheta2[4], theta2[4], theta23[4];
 	for (i = 0; i < 4; i++)
 	{
-		costheta2[i] = (((lxy[i%2] - ER20_a1)*(ER20_a2 + l34*cosbeta3[i%2]) + pwz*l34*sinbeta3[i]) / (a22 + a2l34*cosbeta3[i%2] + l342));
-		sintheta2[i] = (((-lxy[i%2] + ER20_a1)*l34*sinbeta3[i] + pwz*(ER20_a2 + l34*cosbeta3[i%2])) / (a22 + a2l34*cosbeta3[i%2] + l342));
+		costheta2[i] = (((lxy[i%2] - a1)*(a2 + l34*cosbeta3[i%2]) + (pwz-d1)*l34*sinbeta3[i]) / (a22 + da2l34*cosbeta3[i%2] + l342));
+		sintheta2[i] = (((-lxy[i%2] + a1)*l34*sinbeta3[i] + (pwz-d1)*(a2 + l34*cosbeta3[i%2])) / (a22 + 2*a2*l34*cosbeta3[i%2] + l342));
 		theta2[i] = atan2(sintheta2[i], costheta2[i]);
 		theta23[i] = theta2[i] + theta3[i];
 	}
@@ -203,11 +290,11 @@ int invtrans(const cartpos_t &pos, const double lasttheta[7], double theta[7])
 	
 	for (i = 0; i < 4; i++)
 	{
-		theta5[i] = atan2(axy[i], R63[i](2, 2));
-		if (0 == axy[i])
+		theta5[i] = atan2(axy[i], R63[i](2, 2)); 
+		if (abs(axy[i]) < 1e-4)  //axy[i] == 0
 		{
-			theta4[i] = 0;
-			theta6[i] = atan2(-R63[i](0, 1), R63[i](0, 0));
+			theta4[i] = lasttheta[3];
+			theta6[i] = atan2(R63[i](1, 0), R63[i](0, 0)) - theta4[i];
 		}
 		else
 		{
@@ -219,10 +306,10 @@ int invtrans(const cartpos_t &pos, const double lasttheta[7], double theta[7])
 	for (i = 4; i < 8; i++)
 	{
 		theta5[i] = atan2(-axy[i-4], R63[i-4](2, 2));
-		if (0 == axy[i-4])
+		if (abs(axy[i-4]) < 1e-4)
 		{
-			theta4[i] = 0;
-			theta6[i] = atan2(-R63[i-4](0, 1), R63[i-4](0, 0));
+			theta4[i] = lasttheta[3];
+			theta6[i] = atan2(R63[i-4](1, 0), R63[i-4](0, 0)) - theta4[i];
 		}
 		else
 		{
@@ -249,7 +336,7 @@ int invtrans(const cartpos_t &pos, const double lasttheta[7], double theta[7])
 		isaccept = 1;
 		for (j = 0; j < 6; j++)
 		{
-			if ((restheta[i][j] < MIN_Theta[j]) || (restheta[i][j] > MAX_Theta[j]))	
+			if ((restheta[i][j] < MIN_theta[j]) || (restheta[i][j] > MAX_theta[j]))	
 				isaccept = 0;
 			if(!isaccept)
 				break;
@@ -257,7 +344,7 @@ int invtrans(const cartpos_t &pos, const double lasttheta[7], double theta[7])
 		if (!isaccept) continue;
 		double en_i = 0;
 		for (j = 0; j < 6; j++)
-			en_i += ER20_Weig[j] * (restheta[i][j] - lasttheta[j+1])*(restheta[i][j] - lasttheta[j+1]);
+			en_i += ER20_Weig[j] * (restheta[i][j] - lasttheta[j])*(restheta[i][j] - lasttheta[j]);
 		
 		if (min_en > en_i)
 		{
@@ -265,45 +352,54 @@ int invtrans(const cartpos_t &pos, const double lasttheta[7], double theta[7])
 			min_en = en_i;
 		}
 	}
-	if (8 == min_i) return -1;
+	if (8 == min_i) return 1;
 	else
 	{
-		for (int j = 0; j < 6; j++)
-		{
-			theta[j + 1] = restheta[min_i][j];
-		}
+		theta2jointangle(restheta[min_i],jointangle);
 		return 0;
 	}
 }				
 
-void jointspace_show(const double theta[7])
+void jointangle_show(const double jointangle[6])
 {
-	std::cout << " The joints values are: ";
-	for (int i = 1; i < 7; i++)
+	cout << " The jointangles are: ";
+	for (int i = 0; i < 6; i++)
 	{
-		std::cout.width(15);
-		std::cout << theta[i] << '\t';
+		cout.width(10);
+		cout.setf(ios_base::right, ios_base::adjustfield);
+		cout.setf(ios_base::fixed, ios_base::floatfield);
+		cout.precision(3);
+		cout << jointangle[i] << '\t';
 	}
-		
 	std::cout << "\n";
 }
 
-void cartspace_show(const cartpos_t &pos)
+void cartpose_show(const cartpos_t &pos)
 {
-	std::cout << " The Cartesia vals are: ";
+	cout << " The Carte poses are: ";
 	for (int i = 0; i < 3; i++)
 	{
-		std::cout.width(15);
-		std::cout << pos.pe[i] << '\t';
+		cout.width(10);
+		cout.setf(ios_base::right, ios_base::adjustfield);
+		cout.setf(ios_base::fixed, ios_base::floatfield);
+		cout.precision(3);
+		cout << pos.pe[i] << '\t';
 	}
-	
-	std::cout.width(15);
-	std::cout << pos.Rx0 << '\t';
-	std::cout.width(15);
-	std::cout << pos.Ry0 << '\t';
-	std::cout.width(15);
-	std::cout << pos.Rz0 << '\t';
-	std::cout << std::endl;
+	cout.width(10);
+	cout.setf(ios_base::right, ios_base::adjustfield);
+	cout.setf(ios_base::fixed, ios_base::floatfield);
+	cout.precision(3);
+	cout << pos.Rx0 << '\t';
+	cout.width(10);
+	cout.setf(ios_base::right, ios_base::adjustfield);
+	cout.setf(ios_base::fixed, ios_base::floatfield);
+	cout.precision(3);
+	cout << pos.Ry0 << '\t';
+	cout.width(10);
+	cout.setf(ios_base::right, ios_base::adjustfield);
+	cout.setf(ios_base::fixed, ios_base::floatfield);
+	cout.precision(3);
+	cout << pos.Rz0 << '\n';
 }
 
 
