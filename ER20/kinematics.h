@@ -1,13 +1,12 @@
-#pragma once
 #ifndef KINEMATICS_H
 #define KINEMATICS_H
 #ifndef PI
 #define PI 3.1415926545
 #endif
 #include <vector>
-#include "Eigen/Dense"
+#include <Eigen/Dense>
 using namespace Eigen;
-typedef vector<double> vectord;
+typedef std::vector<double> vectord;    //The STL of C++
 
 Vector3d tr2eul(Matrix4d Trans, char mode = 'r');
 Vector3f tr2eul(Matrix4f Trans, char mode = 'r');
@@ -38,7 +37,7 @@ vectord julipt(double x0, double xf, double a, double v, int f = 500);
 	f--the frequency
 	return vector -- the position sequency
 *****************************************************************/
-vectord jlipt(double a, double v, double x0, double xf, int f = 500);
+vectord jlipt(double x0, double xf, double a, double v, int f = 500);
 
 
 

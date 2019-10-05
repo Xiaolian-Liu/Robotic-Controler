@@ -165,14 +165,14 @@ vectord julipt(double x0, double xf, double a, double v, int f)
 		double T = 1.0 / f;
 		unsigned long N = tf * f;
 		vectord x(N);
-		for (int i = 0; i < N; i++)
+        for (unsigned long i = 0; i < N; i++)
 		{
 			double t = i * T;
 			if (t < t1)
 			{
 				x[i] = (a*t*t / 2)/(xf-x0);
 			}
-			if ((t >= t1) && (t < t2))
+            else if ((t >= t1) && (t < t2))
 			{
 				x[i] = (v*v / a / 2 + v * (t - t1))/(xf-x0);
 			}
@@ -181,6 +181,7 @@ vectord julipt(double x0, double xf, double a, double v, int f)
 				x[i] = (abs(xf-x0) - a*(tf - t)*(tf - t)/2)/(xf -x0);
 			}
 		}
+		return x;
 	}
 	else
 	{
@@ -189,7 +190,7 @@ vectord julipt(double x0, double xf, double a, double v, int f)
 		double T = 1.0 / f;
 		unsigned long N = tf * f;
 		vectord x(N);
-		for (int i = 0; i < N; i++)
+        for (unsigned long i = 0; i < N; i++)
 		{
 			double t = i * T;
 			if (t < t1)
@@ -201,9 +202,10 @@ vectord julipt(double x0, double xf, double a, double v, int f)
 				x[i] = (abs(xf-x0) - a*(tf - t)*(tf - t)/2)/(xf-x0);
 			}
 		}
+		return x;
 	}
 }
-vectord jlipt(double a, double v, double x0, double xf, int f)
+vectord jlipt(double x0, double xf, double a, double v, int f)
 {
 	int sgn = 0;
 	if (xf > x0)
@@ -220,14 +222,15 @@ vectord jlipt(double a, double v, double x0, double xf, int f)
 		double T = 1.0 / f;
 		unsigned long N = tf * f;
 		vectord x(N);
-		for (int i = 0; i < N; i++)
+        x[0] = 150;
+        for (unsigned long i = 0; i < N; i++)
 		{
 			double t = i * T;
 			if (t < t1)
 			{
-				x[i] = x0 + sgn * (a*t*t / 2);
+                x[i] = x0 + sgn*(a*t*t / 2);
 			}
-			if ((t >= t1) && (t < t2))
+            else if ((t >= t1) && (t < t2))
 			{
 				x[i] = x0 + sgn * (v*v / a / 2 + v * (t - t1));
 			}
@@ -236,6 +239,7 @@ vectord jlipt(double a, double v, double x0, double xf, int f)
 				x[i] = xf - sgn * (a*(tf - t)*(tf - t) / 2);
 			}
 		}
+		return x;
 	}
 	else
 	{
@@ -244,7 +248,7 @@ vectord jlipt(double a, double v, double x0, double xf, int f)
 		double T = 1.0 / f;
 		unsigned long N = tf * f;
 		vectord x(N);
-		for (int i = 0; i < N; i++)
+        for (unsigned long i = 0; i < N; i++)
 		{
 			double t = i * T;
 			if (t < t1)
@@ -256,5 +260,6 @@ vectord jlipt(double a, double v, double x0, double xf, int f)
 				x[i] = xf - sgn * (a*(tf - t)*(tf - t) / 2);
 			}
 		}
+		return x;
 	}
 }
