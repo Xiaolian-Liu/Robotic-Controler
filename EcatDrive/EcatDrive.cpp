@@ -7,11 +7,15 @@ using std::endl;
 long cycletime = PERIOD_NS;
 RT_TASK my_task;
 int run = 1;
+int istest = 0;
+unsigned short N = 0;
 
 uint8_t ALstate = 0;
 uint16_t StatusWord[6] = {0}, ControlWord[6] = {0};
-int32_t Actualposition[6] = {1,1,1,1,1,1};
-int8_t OperationMode[6] = { 0x01, 0x03, 0x04, 0x08, 0x09, 0x0A };
+int32_t ActualPosition[6] = {0};
+int32_t TargetPosition[6] = {0};
+int8_t OperationMode[6] = { 0x08, 0x08, 0x08, 0x08, 0x08, 0x08 };
+int32_t *off_TarPosition = NULL;
 
 static ec_master_t *master = NULL;
 //static ec_master_state_t master_state = {};
@@ -48,26 +52,26 @@ static unsigned int off_toprpo[6];
 static ec_pdo_entry_reg_t domain_regs[102];
 
 ec_pdo_entry_info_t slave_pdo_entries[] = {
-    {0x6040, 0x00, 16}, /* Control Word */
-    {0x607a, 0x00, 32}, /* Target Position */
+    {0x6040, 0x00, 16}, /* Control Word                 Unsigned16 */
+    {0x607a, 0x00, 32}, /* Target Position              Integer32  */
     {0x60ff, 0x00, 32}, /* Target Velocity */
     {0x6071, 0x00, 16}, /* Target torque */
-    {0x6060, 0x00, 8}, /* Modes of Operation */
+    {0x6060, 0x00, 8}, /* Modes of Operation            Integer8*/
     {0x5ffe, 0x00, 8}, /* Dummy Byte 1 */
     {0x60b8, 0x00, 16}, /* Touch probe function */
-    {0x6041, 0x00, 16}, /* Status Word */
-    {0x6064, 0x00, 32}, /* Position Actual Value */
+    {0x6041, 0x00, 16}, /* Status Word                  Unsigned16 */
+    {0x6064, 0x00, 32}, /* Position Actual Value        Integer32  */
     {0x606c, 0x00, 32}, /* Velocity Actual Value */
     {0x6077, 0x00, 16}, /* Torque Actual Value */
     {0x6061, 0x00, 8}, /* Modes of Operation Display */
     {0x5fff, 0x00, 8}, /* Dummy Byte 2 */
     {0x60f4, 0x00, 32}, /* Following Error Actual Value */
     {0x60fd, 0x00, 32}, /* Digital Inputs */
-    {0x60b9, 0x00, 16}, /* Touch probe status */
-    {0x60ba, 0x00, 32}, /* Touch probe pos 1 pos value */
+    {0x60b9, 0x00, 16}, /* Touch probe status           Unsigned16 */
+    {0x60ba, 0x00, 32}, /* Touch probe pos 1 pos value  Integer32  */
 };
 ec_pdo_info_t slave_pdos[] = {
-    {0x1600, 7, slave_pdo_entries + 0}, /* Position Control RxPDO */
+    {0x1600, 7, slave_pdo_entries + 0}, /* Position Control RxPDO  */
     {0x1a00, 10, slave_pdo_entries + 7}, /* Position Control TxPDO */
 };
 ec_sync_info_t slave_syncs[] = {
@@ -261,22 +265,38 @@ void ecat_task(void *arg)
     RTIME wakeupTime;                   // get current time
 	wakeupTime = rt_timer_read();       // use to get the clock time
     printf("Starting cyclic function.\n");
+    istest = 0;
+    unsigned short j =0;
 	while(run)
 	{
 		wakeupTime += (RTIME)cycletime;
 		rt_task_sleep_until(wakeupTime);
 		ecrt_master_receive(master);
 		ecrt_domain_process(domain);
-        
         rt_check_domain_state(domain);
         for(int i=0; i<6; i++)
         {
             StatusWord[i] = EC_READ_U16(domain_pd + off_stawrd[i]);
     //        cout << std::hex << StatusWord[i] << endl;
-            Actualposition[i] = EC_READ_U32(domain_pd + off_actpos[i]);
+            ActualPosition[i] = EC_READ_S32(domain_pd + off_actpos[i]);
     //        cout << Actualposition[i] << endl;
             EC_WRITE_U16(domain_pd+off_cntlwd[i], ControlWord[i]);
-            EC_WRITE_U16(domain_pd+off_modopr[i], OperationMode[i]); 
+            EC_WRITE_S8(domain_pd+off_modopr[i], OperationMode[i]); 
+            if(istest)
+            {
+                int32_t tarpos = TargetPosition[i] + off_TarPosition[j];
+                EC_WRITE_S32(domain_pd+off_tarpos[i],tarpos);
+                cout << "j: " << j << '\t' << off_TarPosition[j] << endl;
+            }
+            else
+            {
+                EC_WRITE_S32(domain_pd+off_tarpos[i],TargetPosition[i]);
+            }
+        }
+        if(istest) 
+        {
+            j++;
+            if(j == N) j = 0;
         }
         rt_check_master_state(master);
         wakeupTime -= sync_master_clock();

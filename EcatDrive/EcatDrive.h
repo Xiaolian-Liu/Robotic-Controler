@@ -33,6 +33,8 @@
 #define kd
 
 extern int run;
+extern int istest;
+extern unsigned short N;
 extern long cycletime;
 extern RT_TASK my_task;
 
@@ -40,6 +42,9 @@ extern uint8_t ALstate;
 extern uint16_t ControlWord[6];
 extern uint16_t StatusWord[6];
 extern int8_t OperationMode[6];
+extern int32_t ActualPosition[6];
+extern int32_t TargetPosition[6];
+extern int32_t *off_TarPosition;
 
 typedef struct
 {

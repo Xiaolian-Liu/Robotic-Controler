@@ -21,6 +21,7 @@ int main(void)
     {
         faultreset();
         enable();
+        test(200000, 2000000, 60000000);
         usleep(100000000);
     }
     return 0;
