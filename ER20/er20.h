@@ -24,6 +24,10 @@ typedef struct
 	double Ry0;	//Ry0 That means rotation around the y0; uint: degree;
 	double Rz0;	//Rz0 That means rotation around the z0; uint: degree;
 }cartpos_t;		//The cartesian coordinate system position type
+typedef struct 
+{
+	double joinangle[6];
+}joinpos_t;
 
 //The func
 /*************************************************************************
