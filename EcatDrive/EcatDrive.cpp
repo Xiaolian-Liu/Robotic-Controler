@@ -267,6 +267,7 @@ void ecat_task(void *arg)
     printf("Starting cyclic function.\n");
     istest = 0;
     unsigned short j =0;
+    int k = 0;
 	while(run)
 	{
 		wakeupTime += (RTIME)cycletime;
@@ -286,17 +287,26 @@ void ecat_task(void *arg)
             {
                 int32_t tarpos = TargetPosition[i] + off_TarPosition[j];
                 EC_WRITE_S32(domain_pd+off_tarpos[i],tarpos);
+                if(0 == i)
                 cout << "j: " << j << '\t' << off_TarPosition[j] << endl;
             }
             else
             {
-                EC_WRITE_S32(domain_pd+off_tarpos[i],TargetPosition[i]);
+                EC_WRITE_S32(domain_pd+off_tarpos[i],ActualPosition[i]);
             }
         }
         if(istest) 
         {
             j++;
-            if(j == N) j = 0;
+            if(j == N) 
+            {
+                j = 0;
+                k++;
+            }
+            if(3 == k)
+            {
+                istest = 0;
+            }
         }
         rt_check_master_state(master);
         wakeupTime -= sync_master_clock();
