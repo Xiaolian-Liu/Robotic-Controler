@@ -1,42 +1,23 @@
 #ifndef ECATDRIVE_H
 #define ECATDRIVE_H
-
-#include <errno.h>
-#include <signal.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/resource.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <time.h>
-#include <sys/mman.h>
-#include <malloc.h>
-#include <math.h>
-
-#include <rtdm/rtdm.h>
-#include <native/task.h>
-#include <native/sem.h>
-#include <native/mutex.h>
-#include <native/timer.h>
-#include <rtdk.h>
-#include <pthread.h>
-#include "ecrt.h"
+#include <stdint.h> /*where int32_t is included  */
 
 #define FREQUENCY 500
 #define NSEC_PER_SEC (1000000000L)
 #define PERIOD_NS (NSEC_PER_SEC / FREQUENCY)
 #define CoolDrive      0x00000748, 0x00000000
-
-#define Kp  0.05
-#define ki
-#define kd
+#define NUMSl 6
+// number of slaves
+#define FILT_CNT               17
+#define SYNC_MASTER_TO_REF        1
+#define Kp  0.005
+#define ki  0.0000001
+#define kd  0.005
 
 extern int run;
 extern int istest;
 extern unsigned short N;
-extern long cycletime;
-extern RT_TASK my_task;
+// extern RT_TASK my_task;
 
 extern uint8_t ALstate;
 extern uint16_t ControlWord[6];
@@ -54,11 +35,12 @@ typedef struct
     uint32_t product_code;/**< Slave product code. */
 }drive_t;
 
-int ecat_init(void);
-void ecat_task(void *arg);
+/* int ecat_init(void);
 double sync_master_clock(void);
-void rt_check_domain_state(ec_domain_t *domain);
+void rt_check_domain_state(ec_domain_t *domain)
 void rt_check_master_state(ec_master_t *master);
-void endsignal(int sig);
+void endsignal(int sig); */
+
+void ecat_task(void *arg);
 
 #endif

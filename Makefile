@@ -82,7 +82,8 @@ $(TARGET):  $(OBJECTS)
 
 .PHONY:clean
 clean:
-	-$(DEL_FILE) $(OBJECTS) 
+	-$(DEL_FILE) $(OBJECTS)
+	-$(DEL_FILE) $(TARGET) 
 
 
 ####### Sub-libraries

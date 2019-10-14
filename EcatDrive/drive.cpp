@@ -1,6 +1,11 @@
-
+#include <stdio.h>  /* while printf is included */
+#include <unistd.h> /* while sleep() and uslepp() is include */
+#include <math.h>
+#include "EcatDrive.h"
 #include "drive.h"
+
 #include <iostream>
+int cyclens = PERIOD_NS;
 using std::cout;
 using std::endl;
 
@@ -24,7 +29,7 @@ void faultreset(void)
             if( (StatusWord[i] & 0x0008) == 0x0008 )   ////fault
                 ControlWord[i] = FAULT_RESET;
         }
-        usleep(cycletime/1000);
+        usleep(cyclens/1000);
     } 
 }
 
@@ -77,11 +82,11 @@ void enable(void)
             cout << "6 Drivers are enabled" << endl;
             break;
         }
-        usleep(cycletime/1000);      
+        usleep(cyclens/1000);      
     }
 }
 
-void shoutdown(void)
+void shutdown(void)
 {
     while(1)
     {
@@ -100,7 +105,7 @@ void shoutdown(void)
         {
             ControlWord[i] = SHUDOWN;
         }
-        usleep(cycletime/1000);
+        usleep(cyclens/1000);
     }
     
 }
@@ -247,9 +252,9 @@ void test(double a, double v, double x)
         }
     }
     istest = 1;
-    cout << istest << std::endl;
-    sleep(120);
+    // cout << istest << std::endl;
+    sleep(20);
     istest = 0;
-    usleep(2*cycletime/1000);
+    usleep(2*cyclens/1000);
     delete [] off_TarPosition;
 }
