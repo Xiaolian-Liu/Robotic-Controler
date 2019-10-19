@@ -50,6 +50,6 @@ int main(void)
     test(3000000, 1500000, 1500000);
     shutdown();
     usleep(2000000);
-	rt_task_delete(&my_task);
+	rt_task_delete(&rt_ecat_task);
     return 0;
 }

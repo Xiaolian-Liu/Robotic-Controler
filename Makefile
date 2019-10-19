@@ -41,14 +41,14 @@ SOURCES       = robot.cpp \
 		kinematics/kinematics.cpp \
 		kinematics/motion.cpp \
 		kinematics/trajectory.cpp 
-OBJECTS       = robot.o \
-		drive.o \
-		EcatDrive.o \
-		er20.o \
-		exampleview.o \
-		kinematics.o \
-		motion.o \
-		trajectory.o
+OBJECTS = 	Objects/robot.o \
+			Objects/drive.o \
+			Objects/EcatDrive.o \
+			Objects/er20.o \
+			Objects/exampleview.o \
+			Objects/kinematics.o \
+			Objects/motion.o \
+			Objects/trajectory.o
 
 TARGET        = robot.run
 
@@ -95,40 +95,38 @@ check: first
 
 ####### Compile
 
-robot.o: robot.cpp EcatDrive/EcatDrive.h \
+Objects/robot.o: robot.cpp EcatDrive/EcatDrive.h \
 		EcatDrive/ecrt.h \
 		EcatDrive/drive.h \
 		kinematics/motion.h \
 		kinematics/trajectory.h \
 		kinematics/er20.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o robot.o robot.cpp
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-drive.o: EcatDrive/drive.cpp EcatDrive/drive.h \
+Objects/drive.o: EcatDrive/drive.cpp EcatDrive/drive.h \
 		EcatDrive/EcatDrive.h \
 		EcatDrive/ecrt.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o drive.o EcatDrive/drive.cpp
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-EcatDrive.o: EcatDrive/EcatDrive.cpp EcatDrive/ecrt.h \
+Objects/EcatDrive.o: EcatDrive/EcatDrive.cpp EcatDrive/ecrt.h \
 		EcatDrive/EcatDrive.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o EcatDrive.o EcatDrive/EcatDrive.cpp
-
-er20.o: kinematics/er20.cpp kinematics/er20.h \
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
+Objects/er20.o: kinematics/er20.cpp kinematics/er20.h \
 		kinematics/kinematics.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o er20.o kinematics/er20.cpp
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-exampleview.o: kinematics/exampleview.cpp kinematics/kinematics.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o exampleview.o kinematics/exampleview.cpp
+Objects/exampleview.o: kinematics/exampleview.cpp kinematics/kinematics.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-kinematics.o: kinematics/kinematics.cpp kinematics/kinematics.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o kinematics.o kinematics/kinematics.cpp
-
-motion.o: kinematics/motion.cpp kinematics/motion.h \
+Objects/kinematics.o: kinematics/kinematics.cpp kinematics/kinematics.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
+Objects/motion.o: kinematics/motion.cpp kinematics/motion.h \
 		kinematics/trajectory.h \
 		kinematics/er20.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o motion.o kinematics/motion.cpp
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-trajectory.o: kinematics/trajectory.cpp kinematics/trajectory.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o trajectory.o kinematics/trajectory.cpp
+Objects/trajectory.o: kinematics/trajectory.cpp kinematics/trajectory.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
 ####### Install
 
