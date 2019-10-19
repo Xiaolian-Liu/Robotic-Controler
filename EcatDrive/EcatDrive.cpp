@@ -214,49 +214,6 @@ void sync_distributed_clocks(void)
 
 /*****************************************************************************/
 
-/** Return the sign of a number
- *
- * ie -1 for -ve value, 0 for 0, +1 for +ve value
- *
- * \retval the sign of the value
- */
-
-/*
-#define sign(val) \
-    ({ typeof (val) _val = (val); \
-    ((_val > 0) - (_val < 0)); })
-*/
-
-int sign(int val)
-{
-    if(val > 0)
-        return 1;
-    else if(0 == val)
-        return 0;
-    else
-        return -1;
-}
-
-int sign(int64_t val)
-{
-    if(val > 0)
-        return 1;
-    else if(0 == val)
-        return 0;
-    else
-        return -1;
-}
-int sign(int16_t val)
-{
-    if(val > 0)
-        return 1;
-    else if(0 == val)
-        return 0;
-    else
-        return -1;
-}
-/*****************************************************************************/
-
 /** Update the master time based on ref slaves time diff
  *
  * called after the ethercat frame is sent to avoid time jitter in
@@ -305,7 +262,7 @@ void update_master_clock(void)
         {
             // add rounded delta average
             dc_adjust_ns +=
-                ((dc_delta_total_ns + (DC_FILTER_CNT / 2)) / DC_FILTER_CNT);
+                (dc_delta_total_ns + (DC_FILTER_CNT / 2)) / DC_FILTER_CNT;
                  // reset
             dc_delta_total_ns = 0LL;
 
