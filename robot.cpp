@@ -13,7 +13,7 @@
 #include "EcatDrive/drive.h"
 #include "kinematics/motion.h"
 
-RT_TASK my_task;
+RT_TASK rt_ecat_task;
 
 void endsignal(int sig)
 {
@@ -22,18 +22,19 @@ void endsignal(int sig)
 
 int main(void)
 {
-    int ret = rt_task_create(&my_task,"The ecat task",0,99,T_FPU|T_CPU(0));
+    int ret = rt_task_create(&rt_ecat_task,"rt_ecat_task",0,99,T_FPU|T_CPU(0));
     if(ret < 0)
     {
         fprintf(stderr, "Failed to create ecat_task: %s\n", strerror(-ret));
         return -1;
     }
-    ret = rt_task_start(&my_task, &ecat_task,NULL);
+    ret = rt_task_start(&rt_ecat_task, &ecat_task,NULL);
     if(ret < 0)
     {
         fprintf(stderr, "Failed to start ecat_task: %s\n", strerror(-ret));
         return -1;
     }
+    
     signal(SIGTERM, endsignal);
 	signal( SIGINT , endsignal );
 
