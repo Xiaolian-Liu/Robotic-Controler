@@ -134,7 +134,11 @@ install:
 
 uninstall: 
 
+save:
+	git commit -a
 
+push:
+	git push origin
 
 
 

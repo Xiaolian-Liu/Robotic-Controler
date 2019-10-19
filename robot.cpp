@@ -14,6 +14,7 @@
 #include "kinematics/motion.h"
 
 RT_TASK rt_ecat_task;
+RT_TASK 
 
 void endsignal(int sig)
 {
