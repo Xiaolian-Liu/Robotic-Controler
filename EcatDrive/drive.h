@@ -1,7 +1,6 @@
 #ifndef Drive_H
 #define Drive_H
 
-#include "EcatDrive.h"
 
 /* The value of ctl_wrd */
 #define SHUDOWN                     0x0006

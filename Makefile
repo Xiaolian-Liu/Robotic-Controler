@@ -45,7 +45,6 @@ OBJECTS = 	Objects/robot.o \
 			Objects/drive.o \
 			Objects/EcatDrive.o \
 			Objects/er20.o \
-			Objects/exampleview.o \
 			Objects/kinematics.o \
 			Objects/motion.o \
 			Objects/trajectory.o
@@ -96,26 +95,20 @@ check: first
 ####### Compile
 
 Objects/robot.o: robot.cpp EcatDrive/EcatDrive.h \
-		EcatDrive/ecrt.h \
 		EcatDrive/drive.h \
 		kinematics/motion.h \
 		kinematics/trajectory.h \
-		kinematics/er20.h
+		kinematics/er20.h \
+		commu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-Objects/drive.o: EcatDrive/drive.cpp EcatDrive/drive.h \
-		EcatDrive/EcatDrive.h \
-		EcatDrive/ecrt.h
+Objects/drive.o: EcatDrive/drive.cpp EcatDrive/drive.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-Objects/EcatDrive.o: EcatDrive/EcatDrive.cpp EcatDrive/ecrt.h \
-		EcatDrive/EcatDrive.h
+Objects/EcatDrive.o: EcatDrive/EcatDrive.cpp EcatDrive/EcatDrive.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 Objects/er20.o: kinematics/er20.cpp kinematics/er20.h \
 		kinematics/kinematics.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
-
-Objects/exampleview.o: kinematics/exampleview.cpp kinematics/kinematics.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
 Objects/kinematics.o: kinematics/kinematics.cpp kinematics/kinematics.h

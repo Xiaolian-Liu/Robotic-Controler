@@ -20,12 +20,15 @@
 #include <native/sem.h>
 #include <native/mutex.h>
 #include <native/timer.h>
+#include <native/heap.h>
+#include <native/queue.h>
 #include <rtdk.h>
 #include <pthread.h>
+#include <commu.h>
 #include "ecrt.h"
 #include "EcatDrive.h"
 
-int run = 1;
+
 int istest = 0;
 unsigned short N = 0;
 
@@ -33,9 +36,9 @@ unsigned short N = 0;
 /****************************************************************************/
 
 // EtherCAT distributed clock variables
-static int cycle_ns = PERIOD_NS; /* 2 ms */
+const int       cycle_ns = PERIOD_NS; /* 2 ms */
+const int64_t   f = FREQUENCY;
 #define DC_FILTER_CNT          512
-
 
 static uint64_t dc_start_time_ns = 0LL;
 static uint64_t dc_time_ns = 0;
@@ -62,14 +65,16 @@ static uint64_t wakeup_time = 0LL;
 static uint64_t overruns = 0LL;
 
 /****************************************************************************/
+/* use static for not the same vaule err when link */
+static RT_HEAP         data_heap;
+static RT_HEAP         stat_heap;
+static RT_QUEUE        tarpos_queue;
+static driverdata_t *  data;
+static driverstate_t * state;
+static void * data_sharm;
+static void * stat_sharm;
 
-
-uint8_t ALstate = 0;
-uint16_t StatusWord[6] = {0}, ControlWord[6] = {0};
-int32_t ActualPosition[6] = {0};
-int32_t TargetPosition[6] = {0};
-int8_t OperationMode[6] = { 0x08, 0x08, 0x08, 0x08, 0x08, 0x08 };
-int32_t *off_TarPosition = NULL;
+const int32_t maxacc = 32292536;
 
 static ec_master_t *master = NULL;
 //static ec_master_state_t master_state = {};
@@ -77,33 +82,52 @@ static ec_master_t *master = NULL;
 static ec_domain_t *domain = NULL;
 //static ec_domain_state_t domain_state = {};
 
-static ec_slave_config_t *sc_CDR[NUMSl] = {NULL};
+static ec_slave_config_t *sc_CDR[NUMSL] = {NULL};
 
 // process data point
 static uint8_t *domain_pd = NULL;
 
 // offsets for PDO entries
-static unsigned int off_cntlwd[NUMSl];
-static unsigned int off_tarpos[NUMSl];
-static unsigned int off_tarvel[NUMSl];
-static unsigned int off_tartor[NUMSl];
-static unsigned int off_modopr[NUMSl];
-static unsigned int off_dubyt1[NUMSl];
-static unsigned int off_toprfu[NUMSl];
+static unsigned int off_cntlwd[NUMSL];
+static unsigned int off_tarpos[NUMSL];
+static unsigned int off_tarvel[NUMSL];
+static unsigned int off_tartor[NUMSL];
+static unsigned int off_modopr[NUMSL];
+static unsigned int off_dubyt1[NUMSL];
+static unsigned int off_toprfu[NUMSL];
 
-static unsigned int off_stawrd[NUMSl];
-static unsigned int off_actpos[NUMSl];
-static unsigned int off_actvel[NUMSl];
-static unsigned int off_acttor[NUMSl];
-static unsigned int off_moddis[NUMSl];
-static unsigned int off_dubyt2[NUMSl];
-static unsigned int off_floerr[NUMSl];
-static unsigned int off_diginp[NUMSl];
-static unsigned int off_toprst[NUMSl];
-static unsigned int off_toprpo[NUMSl];
+static unsigned int off_stawrd[NUMSL];
+static unsigned int off_actpos[NUMSL];
+static unsigned int off_actvel[NUMSL];
+static unsigned int off_acttor[NUMSL];
+static unsigned int off_moddis[NUMSL];
+static unsigned int off_dubyt2[NUMSL];
+static unsigned int off_floerr[NUMSL];
+static unsigned int off_diginp[NUMSL];
+static unsigned int off_toprst[NUMSL];
+static unsigned int off_toprpo[NUMSL];
+
+
+/* the sign function */
+int sign(int32_t a)
+{
+    if(a > 0)
+    {
+        return 1;
+    }
+    else if (a < 0)
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 
 //domain registration, you have to register domain so that you can send and receive PDO data
-static ec_pdo_entry_reg_t domain_regs[17*NUMSl];
+static ec_pdo_entry_reg_t domain_regs[17*NUMSL];
 
 ec_pdo_entry_info_t slave_pdo_entries[] = {
     {0x6040, 0x00, 16}, /* Control Word                 Unsigned16 */
@@ -295,9 +319,11 @@ void rt_check_domain_state(ec_domain_t *domain)
 	ecrt_domain_state(domain, &ds);
     if (ds.working_counter != domain_state.working_counter) {
         rt_printf("domain: WC %u.\n", ds.working_counter);
+        state->WKC = ds.working_counter;
     }
     if (ds.wc_state != domain_state.wc_state) {
         rt_printf("domain: State %u.\n", ds.wc_state);
+        state->WC_state = ds.wc_state;
     }
     domain_state = ds;
 }
@@ -309,13 +335,15 @@ void rt_check_master_state(ec_master_t *master)
 	ecrt_master_state(master, &ms);
     if (ms.slaves_responding != master_state.slaves_responding) {
         rt_printf("%u slave(s).\n", ms.slaves_responding);
+        state->slaves_responding = ms.slaves_responding;
     }
     if (ms.al_states != master_state.al_states) {
         rt_printf("AL states: 0x%02X.\n", ms.al_states);
-        ALstate = ms.al_states;
+        state->al_states = ms.al_states;
     }
     if (ms.link_up != master_state.link_up) {
         rt_printf("Link is %s.\n", ms.link_up ? "up" : "down");
+        state->link_up = ms.link_up;
     }
     master_state = ms;
 }
@@ -369,7 +397,7 @@ void wait_period(void)
 
 int ecat_init(void)
 {
-    for(uint16_t i=0; i<NUMSl; i++)
+    for(uint16_t i=0; i<NUMSL; i++)
     {
         domain_regs[17*i+0]  = {0, i, CoolDrive, 0x6040, 0x00, off_cntlwd+i};// U16 0
         domain_regs[17*i+1]  = {0, i, CoolDrive, 0x607a, 0x00, off_tarpos+i}; // S32 2
@@ -389,19 +417,16 @@ int ecat_init(void)
         domain_regs[17*i+15] = {0, i, CoolDrive, 0x60b9, 0x00, off_toprst+i};
         domain_regs[17*i+16] = {0, i, CoolDrive, 0x60ba, 0x00, off_toprpo+i};// 21
     }
-
+/* 
     rt_print_auto_init(1);
-
-	/*for the real time application, use the mlockall function */
-
 	if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
     {
 		perror("mlockall failed");
 		return -1;
     }
-
+ */
 	master = ecrt_request_master(0);
-	printf("ecrt_request_master is called \n");
+	rt_printf("ecrt_request_master is called \n");
 	if (!master)
 		return -1;
 
@@ -409,28 +434,28 @@ int ecat_init(void)
 	if(!domain)
 		return -1;
 
-    for(int i=0;i<NUMSl;i++)
+    for(int i=0;i<NUMSL;i++)
     {
         if(!(sc_CDR[i] = ecrt_master_slave_config(master, 0, i, CoolDrive)))
 	    {
-		    fprintf(stderr, "Failed to get slave %d configuration. \n",i);
+		    rt_fprintf(stderr, "Failed to get slave %d configuration. \n",i);
 		    return -1;
 	    }
-        printf("Configuring Slave %d PDOs...\n",i);
+        rt_printf("Configuring Slave %d PDOs...\n",i);
 	    if (ecrt_slave_config_pdos(sc_CDR[i], EC_END, slave_syncs))
 	    {
-		    fprintf(stderr, "Failed to configure Slave %d PDOs.\n",i);
+		    rt_fprintf(stderr, "Failed to configure Slave %d PDOs.\n",i);
 		    return -1;
 	    }
-	    printf("configureing Slave %d PDOs is completed!\n",i);
+	    rt_printf("configureing Slave %d PDOs is completed!\n",i);
     }
 
     if( ecrt_domain_reg_pdo_entry_list(domain, domain_regs))
 	{
-		fprintf(stderr, "PDO entty registration filed! \n");
+		rt_fprintf(stderr, "PDO entty registration filed! \n");
 		return -1;
 	}
-    printf("PDO entry registration succeed!");
+    rt_printf("PDO entry registration succeed!");
     
 
     /* Set the initial master time and select a slave to use as the DC
@@ -442,10 +467,10 @@ int ecat_init(void)
     dc_time_ns = dc_start_time_ns;
 
     // configure SYNC signals for this slave
-    for(int i=0; i<NUMSl; i++)
+    for(int i=0; i<NUMSL; i++)
         ecrt_slave_config_dc(sc_CDR[i], 0x0300, PERIOD_NS,0, 0, 0);
 
-	printf("Activating master...\n");
+	rt_printf("Activating master...\n");
 	if (ecrt_master_activate(master))
 		return -1;
 
@@ -460,15 +485,31 @@ int ecat_init(void)
 
 void ecat_task(void *arg)
 {
+    rt_print_auto_init(1);
+    int err = rt_heap_bind(&data_heap,DRIVE_DATA_HEAP_NAME,1000000000);
+    if(err <0){
+        rt_fprintf(stderr, "driver dada heap bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+    }
+
+    err = rt_heap_bind(&stat_heap,DRIVE_STATE_HEAP_NAME,1000000000);
+    if(err <0){
+        rt_fprintf(stderr, "driver stat bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+    }
+
+    err = rt_queue_bind(&tarpos_queue, TARPOS_QUEUE_NAME, 1000000000);
+    if(err <0){
+        rt_fprintf(stderr, "target position queue bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+    }
+
     if(-1 == ecat_init())
-        printf("ethercat init err!");
+        rt_printf("ethercat init err!");
 /*        
     RTIME wakeupTime;                   // get current time
 	wakeupTime = rt_timer_read();       // use to get the clock time
 */
-    printf("Starting cyclic function.\n");
+    rt_printf("Starting cyclic function.\n");
 
-    int cycle_counter = 0;
+    // int cycle_counter = 0;
     // oneshot mode to allow adjustable wake time
    // rt_timer_set_mode(TM_ONESHOT);
     
@@ -476,69 +517,91 @@ void ecat_task(void *arg)
     wakeup_time = system_time_ns() + 10 * cycle_ns;
 
     istest = 0;
-    unsigned short j =0;
-    int k = 0;
-	while(run)
+    // unsigned short j =0;
+    // int k = 0;
+	while(1)
 	{
         // wait for next period (using adjustable system time)
         wait_period();
-        cycle_counter++;
+
+        err = rt_heap_alloc(&data_heap, 0, TM_NONBLOCK, &data_sharm);
+        if(err < 0)
+            rt_fprintf(stderr, "data heap alloc faile in EcatDrive.cpp : %d", err);
+        data = (driverdata_t *) data_sharm;
+        err = rt_heap_alloc(&stat_heap, 0, TM_NONBLOCK, &stat_sharm);
+            rt_fprintf(stderr, "state heap alloc faile in EcatDrive.cpp : %d", err);
+        state = (driverstate_t *) stat_sharm;
 
 		ecrt_master_receive(master);
 		ecrt_domain_process(domain);
         rt_check_domain_state(domain);
-        for(int i=0; i<NUMSl; i++)
+    
+        err = rt_queue_read(&tarpos_queue, data->TargetPosition, NUMSL*sizeof(int32_t), TM_NONBLOCK);
+        if(err < 0)
+            rt_fprintf(stderr,"target position queue read fail: %d\n", err);
+        
+
+        for(int i=0; i<NUMSL; i++)
         {
-            StatusWord[i] = EC_READ_U16(domain_pd + off_stawrd[i]);
-    //        cout << std::hex << StatusWord[i] << endl;
-            ActualPosition[i] = EC_READ_S32(domain_pd + off_actpos[i]);
-    //        cout << Actualposition[i] << endl;
-            EC_WRITE_U16(domain_pd+off_cntlwd[i], ControlWord[i]);
-            EC_WRITE_S8(domain_pd+off_modopr[i], OperationMode[i]); 
-            if(istest)
-            {
-                int32_t tarpos = TargetPosition[i] + off_TarPosition[j];
-                EC_WRITE_S32(domain_pd+off_tarpos[i],tarpos);
-                if(0 == i)
-                rt_printf("j: %d\t%d",j,off_TarPosition[j]);
+            data->StatusWord[i] = EC_READ_U16(domain_pd + off_stawrd[i]);
+            data->ActualPosition[i] = EC_READ_S32(domain_pd + off_actpos[i]);
+            data->ActualVelocity[i] = EC_READ_S32(domain_pd + off_actvel[i]);
+            EC_WRITE_U16(domain_pd+off_cntlwd[i], data->ControlWord[i]);
+            EC_WRITE_S8(domain_pd+off_modopr[i], data->ModeOperation[i]); 
+
+            if((err < 0) && (abs(data->ActualVelocity[i]) < 10000) )
+            {   // that meas the velocity is zero
+                data->TargetPosition[i] = data->ActualPosition[i];
             }
-            else
+/* 
+            if(abs(2*(f*f*data.TargetPosition[i] - f*f*data.ActualPosition[i] - f*data.ActualVelocity[i])) >
+                        maxacc)     // that means the next position is beyound 
             {
-                EC_WRITE_S32(domain_pd+off_tarpos[i],ActualPosition[i]);
+                data.TargetPosition[i] = data.ActualPosition[i] + data.ActualVelocity[i]/f +
             }
+ */
+            EC_WRITE_S32(domain_pd+off_tarpos[i], data->TargetPosition[i]);
         }
-        if(istest) 
-        {
-            j++;
-            if(j == N) 
-            {
-                j = 0;
-                k++;
-            }
-            if(3 == k)
-            {
-                istest = 0;
-            }
-        }
-        if (!(cycle_counter % 1000)) 
-        {
-            rt_check_master_state(master);
-        }
+
+        rt_check_master_state(master);
 
         ecrt_domain_process(domain);
 		ecrt_domain_queue(domain); //queue all the data
         // sync distributed clock just before master_send to set
         // most accurate master clock time
         sync_distributed_clocks();
-
-
 		ecrt_master_send(master); //send all data to ethercat slave
-
-
         // update the master clock
         // Note: called after ecrt_master_send() to reduce time
         // jitter in the sync_distributed_clocks() call
         update_master_clock();
+
+        err = rt_heap_free(&data_heap, data_sharm);
+        if(err < 0)
+            rt_fprintf(stderr, "data heap free fail in EcatDrive.cpp : %d", err);
+
+        err = rt_heap_free(&stat_heap, stat_sharm);
+        if(err < 0)
+            rt_fprintf(stderr, "state heap free fail in EcatDrive.cpp : %d", err);
+            
+        if(state->stop)
+            break;
 	}
+
+    err = rt_heap_unbind(&data_heap);
+    if(err <0){
+        rt_fprintf(stderr, "driver dada heap bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+    }
+
+    err = rt_heap_unbind(&stat_heap);
+    if(err <0){
+        rt_fprintf(stderr, "driver stat bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+    }
+
+    err = rt_queue_unbind(&tarpos_queue);
+    if(err <0){
+        rt_fprintf(stderr, "target position queue bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+    }
+
     ecrt_release_master(master);
 }
