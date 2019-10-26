@@ -80,10 +80,11 @@ int data_free(void)
     return err;
 }
 
-void faultreset(void)
+void faultreset(void * cookie)
 {
+    rt_print_auto_init(1);
     bind_heap();
-    while(1)
+    while(run)
     {
         driverstate_t * state;
         state = stat_alloc();
@@ -92,12 +93,12 @@ void faultreset(void)
             stat_free();
             break;
         }   
-        printf("Waiting for Ethercat communication to complete......\n");
+        rt_printf("Waiting for Ethercat communication to complete......\n");
         stat_free();
         rt_task_sleep(1000000000);
     }
 
-    while(1)
+    while(run)
     {   //switch on disable
         driverdata_t * data;
         data = data_alloc();
@@ -110,11 +111,12 @@ void faultreset(void)
         }
         for(int i=0; i<6; i++)
         {
+            rt_printf("slave %d status: %d\n", i, data->StatusWord[i]);
             if( (data->StatusWord[i] & 0x0008) == 0x0008 )   ////fault
                 data->ControlWord[i] = FAULT_RESET;
         }
         data_free();
-        rt_task_sleep(2000000);
+        rt_task_sleep(1000000000);
     } 
     unbind_heap();
 }

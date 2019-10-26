@@ -14,21 +14,23 @@
 #include <sys/mman.h>
 #include <malloc.h>
 #include <math.h>
+#include <pthread.h>
 
 #include <rtdm/rtdm.h>
+#include <rtdk.h>
+#include <native/syscall.h>
 #include <native/task.h>
 #include <native/sem.h>
 #include <native/mutex.h>
 #include <native/timer.h>
 #include <native/heap.h>
 #include <native/queue.h>
-#include <rtdk.h>
-#include <pthread.h>
+
 #include <commu.h>
 #include "ecrt.h"
 #include "EcatDrive.h"
 
-
+// int run = 1;
 int istest = 0;
 unsigned short N = 0;
 
@@ -125,6 +127,10 @@ int sign(int32_t a)
     }
 }
 
+void exit_ecat(rt_sigset_t sig)
+{
+    run = 0;
+}
 
 //domain registration, you have to register domain so that you can send and receive PDO data
 static ec_pdo_entry_reg_t domain_regs[17*NUMSL];
@@ -519,17 +525,21 @@ void ecat_task(void *arg)
     istest = 0;
     // unsigned short j =0;
     // int k = 0;
-	while(1)
+	while(run)
 	{
         // wait for next period (using adjustable system time)
         wait_period();
 
         err = rt_heap_alloc(&data_heap, 0, TM_NONBLOCK, &data_sharm);
-        if(err < 0)
+        if(err < 0){
             rt_fprintf(stderr, "data heap alloc faile in EcatDrive.cpp : %d", err);
+        }
         data = (driverdata_t *) data_sharm;
+
         err = rt_heap_alloc(&stat_heap, 0, TM_NONBLOCK, &stat_sharm);
+        if(err < 0){
             rt_fprintf(stderr, "state heap alloc faile in EcatDrive.cpp : %d", err);
+        }
         state = (driverstate_t *) stat_sharm;
 
 		ecrt_master_receive(master);
@@ -537,9 +547,9 @@ void ecat_task(void *arg)
         rt_check_domain_state(domain);
     
         err = rt_queue_read(&tarpos_queue, data->TargetPosition, NUMSL*sizeof(int32_t), TM_NONBLOCK);
-        if(err < 0)
-            rt_fprintf(stderr,"target position queue read fail: %d\n", err);
-        
+        if(err < 0){
+            // rt_fprintf(stderr,"target position queue read fail: %d\n", err);
+        }
 
         for(int i=0; i<NUMSL; i++)
         {
@@ -584,8 +594,6 @@ void ecat_task(void *arg)
         if(err < 0)
             rt_fprintf(stderr, "state heap free fail in EcatDrive.cpp : %d", err);
             
-        if(state->stop)
-            break;
 	}
 
     err = rt_heap_unbind(&data_heap);

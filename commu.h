@@ -6,6 +6,7 @@ tasks of Robotic controllor */
 #define NUMSL   6
 #include <stdint.h>
 
+extern int run;
 
 /* this the information about the heap */
 typedef struct

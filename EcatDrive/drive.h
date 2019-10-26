@@ -37,9 +37,10 @@
 
 
 void enable(void);
-void faultreset(void);
+void faultreset(void *);
 void shutdown(void);
 //void test(int32_t a, int32_t v, int32_t x);
+void drivecntl(void * cookie);
 void test(double a, double v, double x);
 
 #endif
