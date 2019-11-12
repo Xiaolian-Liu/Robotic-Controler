@@ -1,2 +1,6 @@
 *.[ao]
 *.run
+*.txt
+*.dat
+moc_*.cpp
+/teachview-build/
