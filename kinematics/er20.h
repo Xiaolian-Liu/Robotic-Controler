@@ -5,7 +5,7 @@
 #ifndef PI
 #define PI 3.141592653589793
 #endif
-
+#include <stdint.h>		/* where int32_t is included */
 /*
 #ifndef int32_t
 #define int32_t int
@@ -110,7 +110,7 @@ typedef struct
 #ifndef incpos_t
 typedef struct
 {
-    int inc[6];
+    int32_t inc[6];
 }incpos_t;
 #endif
 

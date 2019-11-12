@@ -4,7 +4,13 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/xenomai/include"
+                "/usr/xenomai/include",
+                "./",
+                "~/Robotic-Control-Repository/Robotic-Controler/teachview",
+                "/usr/local/Trolltech/Qt-4.8.6/mkspecs/linux-g++",
+                "/usr/local/Trolltech/Qt-4.8.6/include/QtCore",
+                "/usr/local/Trolltech/Qt-4.8.6/include/QtGui",
+                "/usr/local/Trolltech/Qt-4.8.6/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",

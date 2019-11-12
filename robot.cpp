@@ -11,6 +11,7 @@
 #include <native/heap.h>    /* where rt_heap_creat is included */
 #include <native/queue.h>
 #include <native/pipe.h>
+#include <native/event.h>
 #include <pthread.h>
 
 #include "EcatDrive/EcatDrive.h"
@@ -19,45 +20,34 @@
 
 #include "commu.h"
 
+
 int run = 1;
 int err = 0;    /* err is the vaule for return of Xenomai-native API */
 
 RT_HEAP     driver_data_heap;
 RT_HEAP     driver_stat_heap;
 RT_QUEUE    tarpos_queue;
-RT_PIPE     teachview_pipe;
+// RT_PIPE     teachview_pipe;
+RT_EVENT    state_event;
 
 // RT_TASK     rt_main_task;
 RT_TASK     rt_ecat_task;
-RT_TASK     rt_drive_task;
+RT_TASK     rt_driveinit_task;
+RT_TASK     rt_shoutdown_task;
 RT_TASK     rt_PTP_task;
 RT_TASK     rt_LIN_task;
 RT_TASK     rt_CIR_task;
-rt_sigset_t sig = SIGTERM|SIGINT;
 
+rt_sigset_t sig = SIGTERM|SIGINT;
 void endsignal(int sig)
 {
-	/* err = rt_heap_bind(&driver_stat_heap, DRIVE_STATE_HEAP_NAME, TM_INFINITE);
-    if(err <0){
-        rt_fprintf(stderr, "driver stat bind fail in robot.cpp:endsignal() : %d", err);
+    err = rt_task_spawn(&rt_shoutdown_task,"shoutdown_task", 0, 98, 0,
+                        &shutdown,NULL);
+    if(err < 0){
+        fprintf(stderr,"shoutdown start failed: %s\n",strerror(err));
     }
-    void * stat_block;
-    err = rt_heap_alloc(&driver_stat_heap, 0, TM_INFINITE, &stat_block);
-    if(err <0){
-            rt_fprintf(stderr, "driver stat heap alloc fail in robot.cpp:endsignal() : %d", err);
-    }
-    driverstate_t * state = (driverstate_t *) stat_block;
-
-    state->stop = 1; */
+    usleep(200000);
     run = 0;
-
-    /* err = rt_heap_free(&driver_stat_heap, stat_block);
-    if(err < 0)
-        rt_fprintf(stderr, "stat heap free fail in robot.cpp:endsignal() : %d", err);
-    err = rt_heap_unbind(&driver_stat_heap);
-    if(err <0){
-        rt_fprintf(stderr, "driver stat unbind fail in robot.cpp:endsignal() : %d", err);
-    } */
 }
 
 int main(void)
@@ -71,12 +61,6 @@ int main(void)
         rt_fprintf(stderr,"mlock failed: %s\n", strerror(err));
         return -1;
     }
-
-   /*  err = rt_task_shadow(&rt_main_task,"main_task",50,0);
-    if(err < 0){
-        rt_fprintf(stderr,"main_task start failed: %s\n",strerror(err));
-        return -1;
-    } */
 
     err = rt_heap_create(&driver_data_heap, DRIVE_DATA_HEAP_NAME, 
                             sizeof(driverdata_t), H_PRIO|H_SHARED);
@@ -105,38 +89,43 @@ int main(void)
         rt_fprintf(stderr,"ecat_task start failed: %s\n",strerror(err));
         return -1;
     }
+/*     
+    incpos_t ip1 = {0, 0, 0, 0, 0, 0};
+    err = rt_queue_write(&tarpos_queue, &ip1, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0){
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:ptp() : %d", err);
+		}
+    ip1 = {10, 20, 30, 40, 50, 60};
+    err = rt_queue_write(&tarpos_queue, &ip1, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0){
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:ptp() : %d", err);
+		}
+ */
     
-/* 
-    err = rt_task_spawn(&rt_drive_task,"drive_task",0,99,T_FPU|T_CPU(0),&ecat_task,NULL);
+    err = rt_task_spawn(&rt_driveinit_task,"drive_task", 0, 89, 0,
+                        &driveinit,NULL);
     if(err < 0){
-        rt_fprintf(stderr,"ecat_task start failed: %s\n",strerror(err));
+        rt_fprintf(stderr,"drive_init start failed: %s\n",strerror(err));
         return -1;
     }
- */
-    err = rt_task_create(&rt_drive_task,"drive_task",0,89,T_JOINABLE);
+
+    err = rt_task_spawn(&rt_PTP_task,"PTP_task", 0, 90, 0,
+                        &PTP,NULL);
     if(err < 0){
-        rt_fprintf(stderr, "drive_task create failed: %d\n", err);
-    }
-    err = rt_task_start(&rt_drive_task, &faultreset, NULL);
-    if(err < 0){
-        rt_fprintf(stderr, "faultreset start failed: %d\n", err);
-    }
-    rt_task_join(&rt_drive_task);
-    rt_printf("done\n");
-    // faultreset();
-    // enable();
+        rt_fprintf(stderr,"PTP() start failed: %s\n",strerror(err));
+        return -1;
+    }    
+
     while(run)
     {
         rt_task_sleep(1000000000);
     }
-    
-    // test(3000000, 1500000, 1500000);
-    // shutdown();
-    rt_task_sleep(2000000000);
+
     rt_heap_delete(&driver_data_heap);
     rt_heap_delete(&driver_stat_heap);
     rt_queue_delete(&tarpos_queue);
 	rt_task_delete(&rt_ecat_task);
+    rt_task_delete(&rt_driveinit_task);
     // rt_task_delete(&rt_main_task);
     return 0;
 }

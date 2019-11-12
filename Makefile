@@ -133,7 +133,8 @@ save:
 push:
 	git push origin
 
-
+updateui:
+	uic -o ./teachview/ui_mainwindow.h ./teachview/mainwindow.ui
 
 
 ##all: robot.run

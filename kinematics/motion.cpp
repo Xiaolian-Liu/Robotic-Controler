@@ -1,9 +1,11 @@
+#include <rtdk.h>
+#include <native/queue.h>
+#include <native/heap.h>
+#include <commu.h>
 #include "motion.h"
-#include <iostream>
 
-using std::cout;
-using std::endl;
-
+const joinpos_t  home = {0, 0 , 0, 0, 0, 0};
+const incpos_t  dabao = {-59471, 3373567, 3254210, 3424, 107103, 121782};
 const double maxangle[6] =
 {
 	MAXANG1,
@@ -46,14 +48,14 @@ const double maxacc[6] =
 
 
 
-int ptp(const joinpos_t & p0, const joinpos_t & pf, vectorj & vjoin, int a, int v, int f)
+int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int a, int v, int f)
 {
-	cout << "caculating the ptp function ......\n";
+	rt_printf("caculating the ptp function ......\n");
 	for(int i=0; i<6; i++)
 	{
 		if( (pf.joi[i]<minangle[i]) || (pf.joi[i]>maxangle[i]) )
 		{
-			cout << "err: the destination of joint " << i << " is out of range\n";
+			rt_printf("err: the destination of joint %d is out of range\n",i);
 			return -1;
 		}
 	}
@@ -79,7 +81,11 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, vectorj & vjoin, int a, int 
     maxacc[iamax]*abs((pf.joi[ivmax]-p0.joi[ivmax])/(pf.joi[iamax]-p0.joi[iamax]))*a/100.0, 
                            maxvel[ivmax]*v/100.0,
                            f);
-
+	RT_QUEUE tarpos;					   
+	int err = rt_queue_bind(&tarpos, queue_name, TM_INFINITE);
+	if(err < 0){
+		rt_fprintf(stderr, "target position queue bind failed in motion.cpp:ptp() : %d", err);
+	}
     for(unsigned int i=0; i<namda.size(); i++)
     {	
 		joinpos_t jp;
@@ -87,11 +93,20 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, vectorj & vjoin, int a, int 
         {	
             jp.joi[j] = p0.joi[j]+(pf.joi[j]-p0.joi[j])*namda[i];
         }
-        vjoin.push_back(jp);
+        // vjoin.push_back(jp);
+		incpos_t ip = jointangle2increment(jp);
+		err = rt_queue_write(&tarpos, &ip, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0){
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:ptp() : %d", err);
+		}	
     }
+	err = rt_queue_unbind(&tarpos);
+	if(err < 0){
+		rt_fprintf(stderr, "target position queue unbind failed in motion.cpp:ptp() : %d", err);
+	}
     return 0;
 }
-
+/* 
 int ptp(const joinpos_t & p0, const joinpos_t & pf, vectori & vinc, int a, int v, int f )
 {
 	cout << "caculating the ptp function ......\n";
@@ -235,4 +250,37 @@ int ptp( const joinpos_t & p0, const cartpos_t & cpf, vectori & vinc, int a, int
     return 0;
 }
 
+void PTP(void *cookie)
+{
 
+}
+ */
+
+void PTP(void *cookie)
+{
+	RT_HEAP heap_desc;
+	static void * data_sharm;
+	driverdata_t * data;
+	rt_print_auto_init(1);
+	rt_printf("Satrt PTP......\n");
+	int err = rt_heap_bind(&heap_desc, DRIVE_DATA_HEAP_NAME, TM_INFINITE);
+	if(err < 0){
+		rt_printf("data heap bind fail in motion.cpp:PTP() : %d\n", err);
+	}
+	err = rt_heap_alloc(&heap_desc, 0, TM_INFINITE, &data_sharm);
+    if(err < 0){
+		rt_fprintf(stderr, "data heap alloc faile in motion.cpp:PTP() : %d", err);
+    }
+	data = (driverdata_t *) data_sharm;
+	incpos_t ip0;
+	for(int i=0; i<6; i++){
+		ip0.inc[i] = data->ActualPosition[i];
+	}
+	err = rt_heap_free(&heap_desc, data_sharm);
+	if(err < 0){
+		rt_fprintf(stderr, "data heap free fail in motion.cpp:PTP() : %d", err);
+	}
+	if(ptp(increment2jointangle(ip0), home, TARPOS_QUEUE_NAME, 10, 20) < 0){
+		rt_printf("PTP function failed\n");
+	}
+}

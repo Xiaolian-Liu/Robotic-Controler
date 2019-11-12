@@ -80,14 +80,14 @@ int data_free(void)
     return err;
 }
 
-void faultreset(void * cookie)
+void faultreset(void)
 {
-    rt_print_auto_init(1);
     bind_heap();
     while(run)
     {
         driverstate_t * state;
         state = stat_alloc();
+        // rt_printf("al_states: %d",state->al_states);
         if(0x08 == (state->al_states & 0x08)) 
         {
             stat_free();
@@ -99,7 +99,7 @@ void faultreset(void * cookie)
     }
 
     while(run)
-    {   //switch on disable
+    {   
         driverdata_t * data;
         data = data_alloc();
         if( ((data->StatusWord[0] & 0x004f) == 0x0040) && ((data->StatusWord[1] & 0x004f) == 0x0040) &&
@@ -111,12 +111,12 @@ void faultreset(void * cookie)
         }
         for(int i=0; i<6; i++)
         {
-            rt_printf("slave %d status: %d\n", i, data->StatusWord[i]);
+            // rt_printf("slave %d status: %d\n", i, data->StatusWord[i]);
             if( (data->StatusWord[i] & 0x0008) == 0x0008 )   ////fault
                 data->ControlWord[i] = FAULT_RESET;
         }
         data_free();
-        rt_task_sleep(1000000000);
+        rt_task_sleep(2000000);
     } 
     unbind_heap();
 }
@@ -125,7 +125,7 @@ void faultreset(void * cookie)
 void enable(void)
 {
     bind_heap();
-    while(1)
+    while(run)
     {
         driverstate_t * state;
         state = stat_alloc();
@@ -134,7 +134,7 @@ void enable(void)
             stat_free();
             break;
         } 
-        printf("Waiting for Ethercat communication to complete......\n");
+        rt_printf("Waiting for Ethercat communication to complete......\n");
         stat_free();
         rt_task_sleep(1000000000);
     }
@@ -148,7 +148,7 @@ void enable(void)
         if(FAULT == (data->StatusWord[i] & FAULT))
         {
             isfault = 1;
-            cout << "There are faults in drivers " << i <<", can not enable\n";
+            rt_printf("There are faults in drivers %d, can not enabled\n");
             break;    
         }   
     }
@@ -156,18 +156,19 @@ void enable(void)
 
     int enable[6]={0,0,0,0,0,0};
     int enableN = 0;
-    while( !isfault )
+    while( (!isfault) && run )
     {
         data = data_alloc();
         for(int i=0; i<6; i++)
         {
+            data->ModeOperation[i] = CSP;
             if( (data->StatusWord[i] & 0x006f) == 0x0027 )    // opreation enable
             {
                 if(0 == enable[i])
                 {
                     enable[i] = 1;
                     enableN += 1;
-                    cout << "Driver " << i << " is enabled" << endl;
+                   rt_printf("Driver %d is enabled\n",i);
                 }
             }
             else if( (data->StatusWord[i] & 0x004f) == 0x0040  ) //switch on disable
@@ -180,7 +181,7 @@ void enable(void)
         if(6 == enableN)
         {
             data_free();
-            cout << "6 Drivers are enabled" << endl;
+            rt_printf("6 Drivers are enabled\n");
             break;
         }
         data_free();
@@ -189,8 +190,9 @@ void enable(void)
     unbind_heap();
 }
 
-void shutdown(void)
+void shutdown(void * cookie)
 {
+    rt_print_auto_init(1);
     bind_heap();
     while(1)
     {
@@ -225,6 +227,14 @@ void shutdown(void)
         rt_task_sleep(2000000);
     }
     unbind_heap();
+}
+
+void driveinit(void * cookie)
+{
+    faultreset();
+    rt_printf("the fault of drive is reset\n");
+    rt_task_sleep(1000000000);
+    enable();
 }
 
 /*  void test(int32_t a, int32_t v, int32_t x)    

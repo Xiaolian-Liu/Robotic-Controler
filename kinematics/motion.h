@@ -26,7 +26,7 @@ typedef queue<incpos_t> queuei;
  * 	a and v is the percentage of Acceleration and velocity, range 1-100
  * 	return 0 is noerr, -1 is err
  * *****************************************************************/
-int ptp(const joinpos_t & p0, const joinpos_t & pf, vectorj & vjoin, int a, int v, int f = 500 );
-int ptp(const joinpos_t & p0, const joinpos_t & pf, vectori & vinc, int a, int v, int f = 500 );
-int ptp(const incpos_t & inc0, const incpos_t & incf, vectori & vinc, int a, int v, int f = 500 );
-int ptp(const joinpos_t & p0, const cartpos_t & cpf, vectori & vinc, int a, int v, int f = 500 );
+int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int a, int v, int f = 500);
+// int ptp(const incpos_t & inc0, const incpos_t & incf, int a, int v, int f = 500 );
+// int ptp(const joinpos_t & p0, const cartpos_t & cpf, int a, int v, int f = 500 );
+void PTP(void *cookie);

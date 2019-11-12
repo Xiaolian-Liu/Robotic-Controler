@@ -25,6 +25,7 @@
 #include <native/timer.h>
 #include <native/heap.h>
 #include <native/queue.h>
+#include <native/pipe.h>
 
 #include <commu.h>
 #include "ecrt.h"
@@ -68,9 +69,10 @@ static uint64_t overruns = 0LL;
 
 /****************************************************************************/
 /* use static for not the same vaule err when link */
-static RT_HEAP         data_heap;
-static RT_HEAP         stat_heap;
-static RT_QUEUE        tarpos_queue;
+static RT_HEAP          data_heap;
+static RT_HEAP          stat_heap;
+static RT_QUEUE         tarpos_queue;
+static RT_PIPE          timely_data;
 static driverdata_t *  data;
 static driverstate_t * state;
 static void * data_sharm;
@@ -494,21 +496,31 @@ void ecat_task(void *arg)
     rt_print_auto_init(1);
     int err = rt_heap_bind(&data_heap,DRIVE_DATA_HEAP_NAME,1000000000);
     if(err <0){
-        rt_fprintf(stderr, "driver dada heap bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+        rt_fprintf(stderr, "driver dada heap bind fail in EcatDrive.cpp:ecat_init(): %d\n", err);
     }
 
     err = rt_heap_bind(&stat_heap,DRIVE_STATE_HEAP_NAME,1000000000);
     if(err <0){
-        rt_fprintf(stderr, "driver stat bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+        rt_fprintf(stderr, "driver stat bind fail in EcatDrive.cpp:ecat_init(): %d\n", err);
     }
 
     err = rt_queue_bind(&tarpos_queue, TARPOS_QUEUE_NAME, 1000000000);
     if(err <0){
-        rt_fprintf(stderr, "target position queue bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+        rt_fprintf(stderr, "target position queue bind fail in EcatDrive.cpp:ecat_init(): %d\n", err);
     }
 
+    err = rt_pipe_create(&timely_data, TIMELY_DATA_PIPE_NAME, 0, TIMELY_DATA_PIPE_SIZE);
+    if(err < 0){
+        rt_fprintf(stderr, "timely data pipe create fail in EcatDrive.cpp: %d\n", err);
+    }
+
+    FILE * positiondata;
+    positiondata = fopen("targetposition.txt", "w+");
+    if(positiondata < 0){
+        perror("open targetposition.txt fail: ");
+    }
     if(-1 == ecat_init())
-        rt_printf("ethercat init err!");
+        rt_printf("ethercat init err!\n");
 /*        
     RTIME wakeupTime;                   // get current time
 	wakeupTime = rt_timer_read();       // use to get the clock time
@@ -563,7 +575,10 @@ void ecat_task(void *arg)
             {   // that meas the velocity is zero
                 data->TargetPosition[i] = data->ActualPosition[i];
             }
-/* 
+            else{
+                // rt_printf("target position is: %d\n", data->TargetPosition[i]);
+            }
+/*          
             if(abs(2*(f*f*data.TargetPosition[i] - f*f*data.ActualPosition[i] - f*data.ActualVelocity[i])) >
                         maxacc)     // that means the next position is beyound 
             {
@@ -571,8 +586,9 @@ void ecat_task(void *arg)
             }
  */
             EC_WRITE_S32(domain_pd+off_tarpos[i], data->TargetPosition[i]);
+            rt_fprintf(positiondata, "%d\t", data->TargetPosition[i]);
         }
-
+        rt_fprintf(positiondata, "\n");
         rt_check_master_state(master);
 
         ecrt_domain_process(domain);
@@ -586,30 +602,39 @@ void ecat_task(void *arg)
         // jitter in the sync_distributed_clocks() call
         update_master_clock();
 
+        err = rt_pipe_write(&timely_data, data, sizeof(driverdata_t), P_NORMAL);
+        if(err < 0){
+            rt_fprintf(stderr, "timely data pipe write failed in EcatDrive.cpp: %d\n", err);
+        }
+        
         err = rt_heap_free(&data_heap, data_sharm);
         if(err < 0)
-            rt_fprintf(stderr, "data heap free fail in EcatDrive.cpp : %d", err);
+            rt_fprintf(stderr, "data heap free fail in EcatDrive.cpp : %d\n", err);
 
         err = rt_heap_free(&stat_heap, stat_sharm);
         if(err < 0)
-            rt_fprintf(stderr, "state heap free fail in EcatDrive.cpp : %d", err);
+            rt_fprintf(stderr, "state heap free fail in EcatDrive.cpp : %d\n", err);
             
 	}
 
     err = rt_heap_unbind(&data_heap);
     if(err <0){
-        rt_fprintf(stderr, "driver dada heap bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+        rt_fprintf(stderr, "driver dada heap bind fail in EcatDrive.cpp:ecat_init(): %d\n", err);
     }
 
     err = rt_heap_unbind(&stat_heap);
     if(err <0){
-        rt_fprintf(stderr, "driver stat bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+        rt_fprintf(stderr, "driver stat bind fail in EcatDrive.cpp:ecat_init(): %d\n", err);
     }
 
     err = rt_queue_unbind(&tarpos_queue);
-    if(err <0){
-        rt_fprintf(stderr, "target position queue bind fail in EcatDrive.cpp:ecat_init(): %d", err);
+    if(err < 0){
+        rt_fprintf(stderr, "target position queue unbind fail in EcatDrive.cpp:ecat_init(): %d\n", err);
     }
 
+    err = rt_pipe_delete(&timely_data);
+    if(err < 0){
+        rt_fprintf(stderr, "timely data pipe delete fail in EcatDrive.cpp: %d\n",err);
+    }
     ecrt_release_master(master);
 }
