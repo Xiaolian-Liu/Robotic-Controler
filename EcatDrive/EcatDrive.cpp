@@ -463,7 +463,7 @@ int ecat_init(void)
 		rt_fprintf(stderr, "PDO entty registration filed! \n");
 		return -1;
 	}
-    rt_printf("PDO entry registration succeed!");
+    rt_printf("PDO entry registration succeed!\n");
     
 
     /* Set the initial master time and select a slave to use as the DC
@@ -571,9 +571,13 @@ void ecat_task(void *arg)
             EC_WRITE_U16(domain_pd+off_cntlwd[i], data->ControlWord[i]);
             EC_WRITE_S8(domain_pd+off_modopr[i], data->ModeOperation[i]); 
 
-            if((err < 0) && (abs(data->ActualVelocity[i]) < 10000) )
+            if((err < 0))
+            // || (0 == state->isEnable))
             {   // that meas the velocity is zero
                 data->TargetPosition[i] = data->ActualPosition[i];
+                for(int i=0; i<6; i++){
+                    EC_WRITE_S32(domain_pd+off_tarpos[i], data->TargetPosition[i]);
+                }
             }
             else{
                 // rt_printf("target position is: %d\n", data->TargetPosition[i]);

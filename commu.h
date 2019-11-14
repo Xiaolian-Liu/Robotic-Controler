@@ -46,6 +46,7 @@ typedef struct
                                   - Bit 3: \a OP */
     uint8_t             link_up; /**< \a true, if at least one Ethernet link is
                                 up. */
+    uint8_t             isEnable;
 }driverstate_t;
 #define DRIVE_STATE_HEAP_NAME   "drive_state"
 

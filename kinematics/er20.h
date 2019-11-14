@@ -47,8 +47,8 @@
 #define INCOFF2 	-157781
 #define INCOFF3		9281
 #define INCOFF4		3402
-#define INCOFF5		360587
-#define INCOFF6		533456
+#define INCOFF5		2700548
+#define INCOFF6		144115
 
 // The bits of encoders in the momotor
 #define BITS 	17

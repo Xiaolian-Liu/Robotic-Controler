@@ -187,12 +187,14 @@ void enable(void)
         data_free();
         rt_task_sleep(2000000);     
     }
+    driverstate_t * state = stat_alloc();
+    state->isEnable = 1;
     unbind_heap();
 }
 
 void shutdown(void * cookie)
 {
-    rt_print_auto_init(1);
+    // rt_print_auto_init(1);
     bind_heap();
     while(1)
     {
@@ -231,10 +233,11 @@ void shutdown(void * cookie)
 
 void driveinit(void * cookie)
 {
+    rt_printf("driver init start......\n");
     faultreset();
     rt_printf("the fault of drive is reset\n");
     rt_task_sleep(1000000000);
-    enable();
+    // enable();
 }
 
 /*  void test(int32_t a, int32_t v, int32_t x)    

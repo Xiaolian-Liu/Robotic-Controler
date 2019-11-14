@@ -1,22 +1,14 @@
-#include "QcustomPlot/qcustomplot.h"
-
-#include <queue>
-#include <QApplication>
-// #include <QMainWindow>
-
 #include "mainwindow.h"
-#include "ReadPipeThread.h"
-#include <QMessageBox>
+#include <QApplication>
+#include <Threads/ReadPipeThread.h>
 #include <QObject>
-
 int main(int argc, char *argv[])
-{   
+{
     QApplication a(argc, argv);
-    qRegisterMetaType<Position>("Position");
-    qRegisterMetaType<Position>("Position &");
-    ReadpipeThread pipethread;
     MainWindow w;
-    QObject::connect(&w, SIGNAL(WindowClose()), &pipethread, SLOT(terminate()));
+    ReadpipeThread pipethread;
+    QObject::connect(&w, SIGNAL(windowClosed()), &pipethread, SLOT(terminate()));
+    QObject::connect(&w, SIGNAL(windowClosed()), &pipethread, SLOT(quit()));
     w.show();
     return a.exec();
 }

@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <QtCore>
-#include "Position.h"
+//#include "Position.h"
 #include <stdint.h>
 #include <QVector>
 #include <QMutex>
@@ -52,6 +52,9 @@ private:
     // Position pos;
     int datacount;
     bool bstop;
+
+public slots:
+    void terminate();
 };
 
 #endif

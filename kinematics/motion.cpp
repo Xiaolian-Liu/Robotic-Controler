@@ -1,6 +1,7 @@
 #include <rtdk.h>
 #include <native/queue.h>
 #include <native/heap.h>
+#include <native/task.h>
 #include <commu.h>
 #include "motion.h"
 
@@ -249,38 +250,77 @@ int ptp( const joinpos_t & p0, const cartpos_t & cpf, vectori & vinc, int a, int
     }
     return 0;
 }
-
-void PTP(void *cookie)
-{
-
-}
  */
 
 void PTP(void *cookie)
 {
 	RT_HEAP heap_desc;
+	RT_HEAP stat_heap;
 	static void * data_sharm;
+	// static void * stat_sharm;
 	driverdata_t * data;
+	// driverstate_t * state;
 	rt_print_auto_init(1);
 	rt_printf("Satrt PTP......\n");
+
 	int err = rt_heap_bind(&heap_desc, DRIVE_DATA_HEAP_NAME, TM_INFINITE);
 	if(err < 0){
 		rt_printf("data heap bind fail in motion.cpp:PTP() : %d\n", err);
 	}
+	err = rt_heap_bind(&stat_heap, DRIVE_STATE_HEAP_NAME, TM_INFINITE);
+		if(err < 0){
+			rt_printf("state heap bind fail in motion.cpp:PTP() : %d\n", err);
+		}
+	
+	incpos_t ip0;
+/* 
+	while(1)
+	{
+		err = rt_heap_alloc(&stat_heap, 0, TM_INFINITE, &stat_sharm);
+    	if(err < 0){
+			rt_fprintf(stderr, "state heap alloc faile in motion.cpp:PTP() : %d", err);
+		}
+
+		state = (driverstate_t *) stat_sharm;
+
+		if(1 == state->isEnable){
+			err = rt_heap_free(&stat_heap, stat_sharm);
+			if(err < 0){
+				rt_fprintf(stderr, "state heap free fail in motion.cpp:PTP() : %d", err);
+			}
+			rt_printf("go to break\n");
+			break;
+		}
+
+		rt_task_sleep(2000000000);
+
+		err = rt_heap_free(&stat_heap, stat_sharm);
+		if(err < 0){
+			rt_fprintf(stderr, "state heap free fail in motion.cpp:PTP() : %d", err);
+		}
+	}
+ */	
 	err = rt_heap_alloc(&heap_desc, 0, TM_INFINITE, &data_sharm);
     if(err < 0){
 		rt_fprintf(stderr, "data heap alloc faile in motion.cpp:PTP() : %d", err);
     }
 	data = (driverdata_t *) data_sharm;
-	incpos_t ip0;
 	for(int i=0; i<6; i++){
 		ip0.inc[i] = data->ActualPosition[i];
+		rt_printf("ip0.inc[%d] = %d\n", i, ip0.inc[i]);
 	}
 	err = rt_heap_free(&heap_desc, data_sharm);
 	if(err < 0){
 		rt_fprintf(stderr, "data heap free fail in motion.cpp:PTP() : %d", err);
 	}
-	if(ptp(increment2jointangle(ip0), home, TARPOS_QUEUE_NAME, 10, 20) < 0){
+	joinpos_t ij0 = increment2jointangle(ip0);
+	for(int i=0; i<6; i++){
+		rt_printf("ij0.joi[%d] = %f\n", i, ij0.joi[i]);
+	}
+	if(ptp(ij0, home, TARPOS_QUEUE_NAME, 5, 10) < 0){
 		rt_printf("PTP function failed\n");
 	}
+
+	rt_heap_unbind(&heap_desc);
+	rt_heap_unbind(&stat_heap);
 }

@@ -42,6 +42,7 @@
         "typeinfo": "cpp",
         "qthread": "cpp",
         "qobject": "cpp",
-        "qtcore": "cpp"
+        "qtcore": "cpp",
+        "qdialog": "cpp"
     }
 }

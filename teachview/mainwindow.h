@@ -2,37 +2,31 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "QcustomPlot/qcustomplot.h"
-// #include "axistag.h"
-// #include <queue>
-// #include <Position.h>
+#include "plot/plotwindow.h"
 
-/* fist creat a Ui::Main */
 namespace Ui {
 class MainWindow;
 }
 
 class MainWindow : public QMainWindow
 {
-  Q_OBJECT
-  
+    Q_OBJECT
+
 public:
-  explicit MainWindow(QWidget *parent = 0);
-  ~MainWindow();
-/*   
-signals:
-  void WindowClose();
- */
+    explicit MainWindow(QWidget *parent = 0);
+    ~MainWindow();
+
+private:
+    Ui::MainWindow *ui;
+    PlotWindow * plotAxis[6];
+    PlotWindow * plotAll;
+    void createActions();
 
 private slots:
-  void timerSlot();
-  
-private:
-  Ui::MainWindow *ui; /* in this place, ui->mainwindow.ui */
-  QCustomPlot *mPlot;
-  QPointer<QCPGraph> mGraph[6];
-  QTimer mDataTimer;
-};
+    void plot();
 
+signals:
+    void windowClosed();
+};
 
 #endif // MAINWINDOW_H

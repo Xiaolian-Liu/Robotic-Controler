@@ -55,38 +55,38 @@ int main(void)
     signal(SIGTERM, endsignal);
 	signal( SIGINT , endsignal );
 
-    rt_print_auto_init(1);
+    // rt_print_auto_init(1);
     err = mlockall(MCL_CURRENT|MCL_FUTURE);
     if(err < 0){
-        rt_fprintf(stderr,"mlock failed: %s\n", strerror(err));
+        fprintf(stderr,"mlock failed: %s\n", strerror(err));
         return -1;
     }
 
     err = rt_heap_create(&driver_data_heap, DRIVE_DATA_HEAP_NAME, 
                             sizeof(driverdata_t), H_PRIO|H_SHARED);
     if(err < 0){
-        rt_fprintf(stderr, "ceat driverdata heap create failed: %s\n", strerror(err));
+        fprintf(stderr, "ceat driverdata heap create failed: %s\n", strerror(err));
         return -1;
     }
 
     err = rt_heap_create(&driver_stat_heap, DRIVE_STATE_HEAP_NAME,
                             sizeof(driverstate_t), H_PRIO|H_SHARED);
     if(err < 0){
-        rt_fprintf(stderr, "create driverstat heap create failed: %s\n", strerror(err));
+        fprintf(stderr, "create driverstat heap create failed: %s\n", strerror(err));
         return -1;
     }
 
     err = rt_queue_create(&tarpos_queue, TARPOS_QUEUE_NAME, 4*6*1024*1024, 
                             Q_UNLIMITED, Q_PRIO|Q_SHARED);
     if(err < 0){
-        rt_fprintf(stderr, "create message queue create failed: %s\n", strerror(err));
+        fprintf(stderr, "create message queue create failed: %s\n", strerror(err));
         return -1;
     }
 
     err = rt_task_spawn(&rt_ecat_task,"ecat_task",0,99,T_FPU|T_CPU(0),
                         &ecat_task,NULL);
     if(err < 0){
-        rt_fprintf(stderr,"ecat_task start failed: %s\n",strerror(err));
+        fprintf(stderr,"ecat_task start failed: %s\n",strerror(err));
         return -1;
     }
 /*     
@@ -101,24 +101,25 @@ int main(void)
 			rt_fprintf(stderr, "target position queue write failed in motion.cpp:ptp() : %d", err);
 		}
  */
-    
+
     err = rt_task_spawn(&rt_driveinit_task,"drive_task", 0, 89, 0,
                         &driveinit,NULL);
     if(err < 0){
-        rt_fprintf(stderr,"drive_init start failed: %s\n",strerror(err));
+        fprintf(stderr,"drive_init start failed: %s\n",strerror(err));
         return -1;
     }
-
+    sleep(30);
+    printf("init done!\n");
     err = rt_task_spawn(&rt_PTP_task,"PTP_task", 0, 90, 0,
                         &PTP,NULL);
     if(err < 0){
-        rt_fprintf(stderr,"PTP() start failed: %s\n",strerror(err));
+        fprintf(stderr,"PTP() start failed: %s\n",strerror(err));
         return -1;
     }    
 
     while(run)
     {
-        rt_task_sleep(1000000000);
+        sleep(2);
     }
 
     rt_heap_delete(&driver_data_heap);
