@@ -237,7 +237,7 @@ void driveinit(void * cookie)
     faultreset();
     rt_printf("the fault of drive is reset\n");
     rt_task_sleep(1000000000);
-    // enable();
+    enable();
 }
 
 /*  void test(int32_t a, int32_t v, int32_t x)    

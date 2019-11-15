@@ -36,7 +36,7 @@ PlotWindow::PlotWindow(QWidget * parent, int index) :
 
     mPlot->yAxis->setSubTickPen(QPen(TextColor, TextWidth));
 
-    mPlot->yAxis->setRange(-1000000.0, 8000000.0);
+    mPlot->yAxis->setRange(-200000.0, 4000000.0);
     if('a' == axisi)
     {
         for(int i=0; i<6; i++)
@@ -81,6 +81,7 @@ void PlotWindow::timerSlot()
         posMut.unlock();
         // make key axis range scroll with the data:
         mPlot->xAxis->rescale();
+        mPlot->xAxis->setRange(mPlot->xAxis->range().upper, 3000, Qt::AlignRight);
 //        for(int i=0; i<6; i++)
 //        {
 //            mGraph[i]->rescaleValueAxis(false, true);
@@ -93,6 +94,7 @@ void PlotWindow::timerSlot()
         mGraph[axisi]->setData(poscount, tarposition[axisi], true);
         posMut.unlock();
         mPlot->xAxis->rescale();
+        mPlot->xAxis->setRange(mPlot->xAxis->range().upper, 3000, Qt::AlignRight);
         mGraph[axisi]->rescaleValueAxis(false, true);
     }
 

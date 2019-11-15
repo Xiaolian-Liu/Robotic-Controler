@@ -5,7 +5,7 @@
 #include <commu.h>
 #include "motion.h"
 
-const joinpos_t  home = {0, 0 , 0, 0, 0, 0};
+const joinpos_t  home = {{0, 0 , 0, 0, 0, 0}};
 const incpos_t  dabao = {-59471, 3373567, 3254210, 3424, 107103, 121782};
 const double maxangle[6] =
 {
@@ -77,18 +77,32 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int
 			iamax = i;	//find which axis accerlerate faster ralatively
 		}
 	}
+	double acc = maxacc[iamax]*abs((pf.joi[ivmax]-p0.joi[ivmax])/(pf.joi[iamax]-p0.joi[iamax]))*a/100.0;
+	double vel = maxvel[ivmax]*v/100.0;
+	rt_printf("p0: %f\n", p0.joi[ivmax]);
+	rt_printf("pf: %f\n", pf.joi[ivmax]);
+	rt_printf("pf: %f\n", acc);
+	rt_printf("pf: %f\n", vel);
+	rt_printf("pf: %d\n", f);
+
 	vectord namda = julipt(p0.joi[ivmax], 
                            pf.joi[ivmax],
-    maxacc[iamax]*abs((pf.joi[ivmax]-p0.joi[ivmax])/(pf.joi[iamax]-p0.joi[iamax]))*a/100.0, 
-                           maxvel[ivmax]*v/100.0,
+                           acc, 
+                           vel,
                            f);
 	RT_QUEUE tarpos;					   
 	int err = rt_queue_bind(&tarpos, queue_name, TM_INFINITE);
 	if(err < 0){
 		rt_fprintf(stderr, "target position queue bind failed in motion.cpp:ptp() : %d", err);
 	}
+	incpos_t inchome = jointangle2increment(pf);
+	for(int j=0; j<6; j++)
+	{
+		rt_printf("home[%d]: %d\n",j, inchome.inc[j]);
+	}
     for(unsigned int i=0; i<namda.size(); i++)
     {	
+		rt_printf("%f\n", namda[i]);
 		joinpos_t jp;
         for(int j=0; j<6; j++)
         {	
@@ -257,9 +271,9 @@ void PTP(void *cookie)
 	RT_HEAP heap_desc;
 	RT_HEAP stat_heap;
 	static void * data_sharm;
-	// static void * stat_sharm;
+	static void * stat_sharm;
 	driverdata_t * data;
-	// driverstate_t * state;
+	driverstate_t * state;
 	rt_print_auto_init(1);
 	rt_printf("Satrt PTP......\n");
 
@@ -273,7 +287,7 @@ void PTP(void *cookie)
 		}
 	
 	incpos_t ip0;
-/* 
+
 	while(1)
 	{
 		err = rt_heap_alloc(&stat_heap, 0, TM_INFINITE, &stat_sharm);
@@ -299,7 +313,7 @@ void PTP(void *cookie)
 			rt_fprintf(stderr, "state heap free fail in motion.cpp:PTP() : %d", err);
 		}
 	}
- */	
+	
 	err = rt_heap_alloc(&heap_desc, 0, TM_INFINITE, &data_sharm);
     if(err < 0){
 		rt_fprintf(stderr, "data heap alloc faile in motion.cpp:PTP() : %d", err);
@@ -317,7 +331,7 @@ void PTP(void *cookie)
 	for(int i=0; i<6; i++){
 		rt_printf("ij0.joi[%d] = %f\n", i, ij0.joi[i]);
 	}
-	if(ptp(ij0, home, TARPOS_QUEUE_NAME, 5, 10) < 0){
+	if(ptp(ij0, home, TARPOS_QUEUE_NAME, 5, 5) < 0){
 		rt_printf("PTP function failed\n");
 	}
 

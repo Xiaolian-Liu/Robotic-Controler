@@ -16,9 +16,7 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     plot/plotwindow.cpp \
     plot/qcustomplot.cpp \
-    Threads/ReadPipeThread.cpp \
-    ../EcatDrive/drive.cpp \
-    ../EcatDrive/EcatDrive.cpp
+    Threads/ReadPipeThread.cpp
 
 HEADERS  += mainwindow.h \
     plot/plotwindow.h \

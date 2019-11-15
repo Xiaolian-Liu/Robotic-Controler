@@ -19,15 +19,15 @@ vectord julipt(double x0, double xf, double a, double v, int f)
 			double t = i * T;
 			if (t < t1)
 			{
-				x[i] = (a*t*t / 2)/(xf-x0);
+				x[i] = (a*t*t / 2)/abs(xf-x0);
 			}
             else if ((t >= t1) && (t < t2))
 			{
-				x[i] = (v*v / a / 2 + v * (t - t1))/(xf-x0);
+				x[i] = (v*v / a / 2 + v * (t - t1))/abs(xf-x0);
 			}
 			else
 			{
-				x[i] = (abs(xf-x0) - a*(tf - t)*(tf - t)/2)/(xf -x0);
+				x[i] = (abs(xf-x0) - a*(tf - t)*(tf - t)/2)/abs(xf -x0);
 			}
 		}
 		return x;
@@ -44,11 +44,11 @@ vectord julipt(double x0, double xf, double a, double v, int f)
 			double t = i * T;
 			if (t < t1)
 			{
-				x[i] = (a*t*t / 2)/(xf - x0);
+				x[i] = (a*t*t / 2)/abs(xf - x0);
 			}
 			else
 			{
-				x[i] = (abs(xf-x0) - a*(tf - t)*(tf - t)/2)/(xf-x0);
+				x[i] = (abs(xf-x0) - a*(tf - t)*(tf - t)/2)/abs(xf-x0);
 			}
 		}
 		return x;
