@@ -43,6 +43,7 @@
         "qthread": "cpp",
         "qobject": "cpp",
         "qtcore": "cpp",
-        "qdialog": "cpp"
+        "qdialog": "cpp",
+        "dense": "cpp"
     }
 }

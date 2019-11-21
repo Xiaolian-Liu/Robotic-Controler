@@ -1,22 +1,25 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/xenomai/include",
-                "./",
-                "~/Robotic-Control-Repository/Robotic-Controler/teachview",
-                "/usr/local/Trolltech/Qt-4.8.6/mkspecs/linux-g++",
-                "/usr/local/Trolltech/Qt-4.8.6/include/QtCore",
-                "/usr/local/Trolltech/Qt-4.8.6/include/QtGui",
-                "/usr/local/Trolltech/Qt-4.8.6/include"
+                "D:\\Program Files (x86)\\CodeBlocks\\MinGW\\lib\\gcc\\mingw32\\5.1.0\\include",
+                "D:\\Program Files (x86)\\CodeBlocks\\MinGW\\lib\\gcc\\mingw32\\5.1.0\\include\\c++",
+                "D:\\Program Files (x86)\\CodeBlocks\\MinGW\\lib\\gcc\\mingw32\\5.1.0\\include\\c++\\mingw32",
+                "d:\\Qt\\4.8.6\\include\\QtGui",
+                "d:\\Qt\\4.8.6\\include",
+                "d:\\Qt\\4.8.6\\include\\ActiveQt",
+                "d:\\Qt\\4.8.6\\mkspecs\\win32-g++",
+                "D:\\Program Files (x86)\\CodeBlocks\\MinGW\\lib\\gcc\\mingw32\\5.1.0\\include\\c++\\mingw32\\bits",
+                ".\\teachview"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/clang",
-            "cStandard": "c11",
-            "cppStandard": "c++14",
-            "intelliSenseMode": "clang-x64"
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "intelliSenseMode": "msvc-x64"
         }
     ],
     "version": 4

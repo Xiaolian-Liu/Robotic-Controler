@@ -13,12 +13,20 @@ ReadpipeThread::ReadpipeThread()
     if(pipe_fd < 0){
         perror("pipe open fail");
     }/* open will block until the file can be opened */
-#else
+    else{
+        start();
+    }
 
+#else
+    pipe_file.setFileName("/dev/rtp0");
+    if(pipe_file.open(QFile::ReadWrite)){
+        start();
+    }
+    else{
+        perror("pipe open fail");
+    }
 
 #endif
-
-    start();
 }
 
 ReadpipeThread::~ReadpipeThread()
@@ -31,16 +39,22 @@ ReadpipeThread::~ReadpipeThread()
 void ReadpipeThread::run()
 {
     datacount = 0;
-
-
-
-    
     std::ofstream dataout("targetposition.txt");
     while(!bstop)
     {
+
+#ifdef LINUX
+
         int err = read(pipe_fd, &data, sizeof(driverdata_t));
         if(err < 0){
             perror("pipe read fail");
+            continue;
+        }
+#else
+        int len = pipe_file.readData(&data, sizeof(driverdata_t));
+        if(len < 0){
+            perror("pipe read fail");
+            continue;
         }
         datacount++;
         posMut.lock();

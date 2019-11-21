@@ -11,7 +11,9 @@ build*
 *.pro
 *.pro.user
 *.pro.user*
-*Eigen\*
-*debug\*
+*Eigen/*
+*debug/*
 *.Debug
 *.Release
+teachview/Eigen/SparseCore
+*.json
