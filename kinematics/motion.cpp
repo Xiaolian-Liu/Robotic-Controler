@@ -334,6 +334,13 @@ void PTP(void *cookie)
 	if(ptp(ij0, home, TARPOS_QUEUE_NAME, 5, 5) < 0){
 		rt_printf("PTP function failed\n");
 	}
+	joinpos_t ij1 = {{30,20,10,-20,30,40}};
+	if(ptp(home, ij1, TARPOS_QUEUE_NAME, 10, 10) < 0){
+		rt_printf("PTP function failed\n");
+	}
+	if(ptp(ij1, ij0, TARPOS_QUEUE_NAME, 10, 10) < 0){
+		rt_printf("PTP function failed\n");
+	}
 
 	rt_heap_unbind(&heap_desc);
 	rt_heap_unbind(&stat_heap);
