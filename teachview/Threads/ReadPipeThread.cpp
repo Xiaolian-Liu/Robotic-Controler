@@ -8,6 +8,16 @@ QMutex posMut;
 ReadpipeThread::ReadpipeThread()
 {
     bstop = false;
+#ifdef LINUX
+    pipe_fd = open("/dev/rtp0",O_RDWR);/* open will block until the file can't be opened */
+    if(pipe_fd < 0){
+        perror("pipe open fail");
+    }/* open will block until the file can be opened */
+#else
+
+
+#endif
+
     start();
 }
 
@@ -21,10 +31,9 @@ ReadpipeThread::~ReadpipeThread()
 void ReadpipeThread::run()
 {
     datacount = 0;
-    pipe_fd = open("/dev/rtp0",O_RDWR);/* open will block until the file can be opened */
-    if(pipe_fd < 0){
-        perror("pipe open fail");
-    }/* open will block until the file can be opened */
+
+
+
     
     std::ofstream dataout("targetposition.txt");
     while(!bstop)
@@ -47,7 +56,3 @@ void ReadpipeThread::run()
     }
 }
 
-void ReadpipeThread::terminate()
-{
-    bstop = true;
-}

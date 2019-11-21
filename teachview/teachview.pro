@@ -16,14 +16,20 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     plot/plotwindow.cpp \
     plot/qcustomplot.cpp \
-    Threads/ReadPipeThread.cpp
+    Threads/ReadPipeThread.cpp \
+    kinematics/er20.cpp \
+    kinematics/kinematics.cpp \
+    kinematics/trajectory.cpp
 
 HEADERS  += mainwindow.h \
     plot/plotwindow.h \
-    ../build-teachview-Qt_4_8_6_Qt_4_8_6-Debug/ui_mainwindow.h \
-    ../build-teachview-Qt_4_8_6_Qt_4_8_6-Debug/ui_plotwindow.h \
     plot/qcustomplot.h \
-    Threads/ReadPipeThread.h
+    Threads/ReadPipeThread.h \
+    ui_mainwindow.h \
+    ui_plotwindow.h \
+    kinematics/er20.h \
+    kinematics/kinematics.h \
+    kinematics/trajectory.h \
 
 FORMS    += mainwindow.ui \
     plot/plotwindow.ui
@@ -33,4 +39,6 @@ RESOURCES += \
 
 DISTFILES +=
 
-INCLUDEPATH += . QcustomPlot Threads
+INCLUDEPATH += . QcustomPlot Threads Eigen
+
+QMAKE_CXXFLAGS   +=    -std=c++11 -Wall

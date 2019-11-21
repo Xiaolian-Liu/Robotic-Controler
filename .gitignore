@@ -5,3 +5,13 @@
 moc_*.cpp
 teachview-build/
 build*
+*.vscode*
+*debug*
+*.json
+*.pro
+*.pro.user
+*.pro.user*
+*Eigen\*
+*debug\*
+*.Debug
+*.Release

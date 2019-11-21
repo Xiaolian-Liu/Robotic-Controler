@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <QVector>
 #include <QMutex>
+#include <QFile>
+
 #define NUMSL   6
 typedef struct
 {
@@ -48,13 +50,11 @@ protected:
 
 private:
     int pipe_fd;
+    QFile pipe_file;
     driverdata_t data;
     // Position pos;
     int datacount;
     bool bstop;
-
-public slots:
-    void terminate();
 };
 
 #endif
