@@ -11,8 +11,8 @@
                 "d:\\Qt\\4.8.6\\include",
                 "d:\\Qt\\4.8.6\\include\\ActiveQt",
                 "d:\\Qt\\4.8.6\\mkspecs\\win32-g++",
-                "D:\\Program Files (x86)\\CodeBlocks\\MinGW\\lib\\gcc\\mingw32\\5.1.0\\include\\c++\\mingw32\\bits",
-                ".\\teachview"
+                "D:\\Program Files (x86)\\CodeBlocks\\MinGW\\lib\\gcc\\mingw32\\5.1.0\\include\\c++\\mingw32\\bits"
+                
             ],
             "defines": [
                 "_DEBUG",

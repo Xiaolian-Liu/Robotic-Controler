@@ -44,6 +44,11 @@
         "qobject": "cpp",
         "qtcore": "cpp",
         "qdialog": "cpp",
-        "dense": "cpp"
+        "dense": "cpp",
+        "cstddef": "cpp",
+        "algorithm": "cpp",
+        "system_error": "cpp",
+        "qvector": "cpp",
+        "core": "cpp"
     }
 }

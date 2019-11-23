@@ -6,7 +6,12 @@
 #endif
 
 #include <Eigen/Dense>
-using namespace Eigen;
+using Eigen::Vector3d;
+using Eigen::Vector3f;
+using Eigen::Matrix3f;
+using Eigen::Matrix3d;
+using Eigen::Matrix4d;
+using Eigen::Matrix4f;
 
 Vector3d tr2eul(Matrix4d Trans, char mode = 'r');
 Vector3f tr2eul(Matrix4f Trans, char mode = 'r');

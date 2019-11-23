@@ -127,7 +127,10 @@ int forkine(const double jointangle[6], cartpos_t *pos)
 	for (i = 0; i < 6; i++)
 	{
 		if ((jointangle[i] < MIN_jointangle[i]) || (jointangle[i] > MAX_jointangle[i]))
+        {
+			cout << "forward kinematics err: the joint angle" << i+1 << "byound limits" << endl;
 			return (i+1);
+        }
 	}
 	double ta[7]; // the theta for D-H method, 7 numbers, 1th-6th  are useed, abandon the first
 	double teta[6];
@@ -190,7 +193,7 @@ int forkine(const double jointangle[6], cartpos_t *pos)
 #endif // ER20CTEST
 
 	return 0;
-};
+}
 	
 int invkine(const cartpos_t &pos, const double lastjointangle[6], double jointangle[6])
 {
@@ -353,7 +356,11 @@ int invkine(const cartpos_t &pos, const double lastjointangle[6], double jointan
 			min_en = en_i;
 		}
 	}
-	if (8 == min_i) return 1;
+	if (8 == min_i)
+	{
+		cout << "inverse kinematics err: No such appropriate joint angle" << endl;
+		return -1;
+	} 
 	else
 	{
 		theta2jointangle(restheta[min_i],jointangle);

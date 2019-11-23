@@ -1,5 +1,7 @@
 #include "trajectory.h"
 #include <iostream>
+#include <fstream>
+#include <iomanip>
 
 vectord julipt(double x0, double xf, double a, double v, int f)
 {
@@ -179,3 +181,60 @@ int ulspb(vectord & s, vectord & sd, vectord & sdd, double s0, double sf, double
     }
 }
 
+int lintraj(vectorpos & p, cartpos_t p0, cartpos_t pf , int a, int v, int f)
+{
+    double acc = a*LMAXACC/100.0;
+    double vel = v*LMAXVEL/100.0;
+    double Sf = 0;
+    for(int i=0; i<3; i++)
+    {
+        Sf += (pf.pe[i]-p0.pe[i])*(pf.pe[i]-p0.pe[i]);
+    }
+    Sf = sqrt(Sf);
+    vectord s,sd,sdd;
+    ulspb(s,sd,sdd, 0, Sf, acc, vel, f);
+    int N = s.size();
+    p.resize(N);
+    for(int i=0; i<N; i++)
+    {
+        cartpos_t temp;
+        for(int j =0; j<3; j++){
+            temp.pe[j] = p0.pe[j]+(pf.pe[j]-p0.pe[j])*s[i];
+        }
+        temp.Rx0 = p0.Rx0+(pf.Rx0-p0.Rx0)*s[i];
+        temp.Ry0 = p0.Ry0+(pf.Ry0-p0.Ry0)*s[i];
+        temp.Rz0 = p0.Rz0+(pf.Rz0-p0.Rz0)*s[i];
+		p[i] = temp;
+    }
+	return 0;
+}
+int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f)
+{
+    std::ofstream angleout;
+    angleout.open("angles.txt");
+    vectorpos pos;
+    cartpos_t p0;
+    forkine(j0.joi, &p0);
+    lintraj(pos, p0, pf, a, v, f);
+    int N = pos.size();
+    j.resize(N);
+    j[0] = j0;
+	for(int i=0; i<6; i++){
+        angleout << std::setprecision(5) << j[0].joi[i] << " ";
+	}
+	angleout << std::endl;
+    for(int i=1; i<N; i++)
+    {
+        if(i == 531)
+        {
+            int Q = 1;
+            Q = Q;
+        }
+        invkine(pos[i], j[i-1].joi, j[i].joi);
+        for(int h=0; h<6; h++){
+            angleout << std::setprecision(5) << (j[i]).joi[h] << " ";
+		}
+		angleout << std::endl;
+    }
+    return 0;
+}

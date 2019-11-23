@@ -88,6 +88,10 @@
 #define MINANG5		-132
 #define MINANG6		-180
 
+//the max cart speed mm/s
+#define LMAXVEL     1000
+//the max cart acceleration mm/s^2
+#define LMAXACC     2000
 
 //The Var
 #ifndef cartpos_t
