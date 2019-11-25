@@ -620,6 +620,7 @@ void ecat_task(void *arg)
             rt_fprintf(stderr, "state heap free fail in EcatDrive.cpp : %d\n", err);
             
 	}
+    rt_printf("while done!\n");
 
     err = rt_heap_unbind(&data_heap);
     if(err <0){

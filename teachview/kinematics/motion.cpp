@@ -1,4 +1,3 @@
-#ifdefined XENOMAI2
 
 #include <rtdk.h>
 #include <native/queue.h>
@@ -333,14 +332,46 @@ void PTP(void *cookie)
 	for(int i=0; i<6; i++){
 		rt_printf("ij0.joi[%d] = %f\n", i, ij0.joi[i]);
 	}
-	if(ptp(ij0, home, TARPOS_QUEUE_NAME, 5, 5) < 0){
+	joinpos_t ij1 = {{0,0,0,0,90,0}};
+	if(ptp(ij0, ij1, TARPOS_QUEUE_NAME, 10, 10) < 0){
 		rt_printf("PTP function failed\n");
 	}
-	joinpos_t ij1 = {{30,20,10,-20,30,40}};
-	if(ptp(home, ij1, TARPOS_QUEUE_NAME, 10, 10) < 0){
-		rt_printf("PTP function failed\n");
+	cartpos_t cp1;
+	forkine(ij1.joi, &cp1);
+	cartpos_t cp2;
+	cp2.pe[0] = cp1.pe[0];
+	cp2.pe[1] = -1000;
+	cp2.pe[2] = cp1.pe[2];
+	cp2.Rx0 = cp1.Rx0;
+	cp2.Ry0 = cp1.Ry0;
+	cp2.Rz0 = cp1.Rz0;
+	vectorangle jang;
+	lintraj(jang, ij1, cp2, 20, 10);
+	RT_QUEUE tarpos;					   
+	err = rt_queue_bind(&tarpos, TARPOS_QUEUE_NAME, TM_INFINITE);
+	if(err < 0){
+		rt_fprintf(stderr, "target position queue bind failed in motion.cpp:ptp() : %d", err);
 	}
-	if(ptp(ij1, ij0, TARPOS_QUEUE_NAME, 10, 10) < 0){
+
+	for(unsigned int i=0; i<jang.size(); i++)
+	{
+		incpos_t ip = jointangle2increment(jang[i]);	
+		err = rt_queue_write(&tarpos, &ip, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0){
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
+	}
+
+	err = rt_queue_unbind(&tarpos);
+	if(err < 0){
+		rt_fprintf(stderr, "target position queue unbind failed in motion.cpp:PTP() : %d", err);
+	}
+
+	if(ptp(jang[jang.size()-1], ij0, TARPOS_QUEUE_NAME, 10, 10) < 0){
 		rt_printf("PTP function failed\n");
 	}
 

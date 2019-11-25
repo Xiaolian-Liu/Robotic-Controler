@@ -3,7 +3,7 @@ CXX           = g++
 DEFINES       =
 CFLAGS        = -g -Wall $(DEFINES)
 CXXFLAGS      = -g -Wall -std=c++11 $(DEFINES)
-INCPATH       = -I/usr/xenomai/include -I. -IEcatDrive -Ikinematics -I.
+INCPATH       = -I/usr/xenomai/include -I. -I./teachview
 LINK          = g++
 LFLAGS        =
 LIBS          = -L/usr/xenomai/lib -lnative -lrtdm -lxenomai -L/opt/etherlab/lib -lethercat_rtdm
@@ -94,31 +94,28 @@ check: first
 
 ####### Compile
 
-Objects/robot.o: robot.cpp EcatDrive/EcatDrive.h \
-		EcatDrive/drive.h \
-		kinematics/motion.h \
-		kinematics/trajectory.h \
-		kinematics/er20.h \
-		commu.h
+Objects/robot.o: robot.cpp EcatDrive/EcatDrive.h EcatDrive/drive.h commu.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
 Objects/drive.o: EcatDrive/drive.cpp EcatDrive/drive.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-Objects/EcatDrive.o: EcatDrive/EcatDrive.cpp EcatDrive/EcatDrive.h
+Objects/EcatDrive.o: EcatDrive/EcatDrive.cpp EcatDrive/EcatDrive.h \
+					EcatDrive/ecrt.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
-Objects/er20.o: kinematics/er20.cpp kinematics/er20.h \
-		kinematics/kinematics.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
-
-Objects/kinematics.o: kinematics/kinematics.cpp kinematics/kinematics.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
-Objects/motion.o: kinematics/motion.cpp kinematics/motion.h \
-		kinematics/trajectory.h \
-		kinematics/er20.h
+Objects/er20.o: teachview/kinematics/er20.cpp teachview/kinematics/er20.h \
+ 				teachview/kinematics/kinematics.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-Objects/trajectory.o: kinematics/trajectory.cpp kinematics/trajectory.h
+Objects/kinematics.o: teachview/kinematics/kinematics.cpp \
+ teachview/kinematics/kinematics.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
+Objects/motion.o: teachview/kinematics/motion.cpp teachview/kinematics/motion.h \
+ teachview/kinematics/trajectory.h teachview/kinematics/er20.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
+
+Objects/trajectory.o: teachview/kinematics/trajectory.cpp \
+ teachview/kinematics/trajectory.h teachview/kinematics/er20.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
 ####### Install
