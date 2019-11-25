@@ -16,7 +16,7 @@
 
 #include "EcatDrive/EcatDrive.h"
 #include "EcatDrive/drive.h"
-#include "kinematics/motion.h"
+#include <kinematics/motion.h>
 
 #include "commu.h"
 
@@ -49,19 +49,8 @@ void endsignal(int sig)
     usleep(200000);
     run = 0;
 }
-
-int main(void)
+int init()
 {
-    signal(SIGTERM, endsignal);
-	signal( SIGINT , endsignal );
-
-    // rt_print_auto_init(1);
-    err = mlockall(MCL_CURRENT|MCL_FUTURE);
-    if(err < 0){
-        fprintf(stderr,"mlock failed: %s\n", strerror(err));
-        return -1;
-    }
-
     err = rt_heap_create(&driver_data_heap, DRIVE_DATA_HEAP_NAME, 
                             sizeof(driverdata_t), H_PRIO|H_SHARED);
     if(err < 0){
@@ -76,10 +65,45 @@ int main(void)
         return -1;
     }
 
+    void * stat_sharm;
+    err = rt_heap_alloc(&driver_stat_heap, 0, TM_INFINITE, &stat_sharm);
+    if(err < 0){
+        fprintf(stderr, "state heap alloc faile in init : %d", err);
+        return -1;
+    }
+    // memset(&stat_sharm, 0, sizeof(driverstate_t));
+    driverstate_t * st = (driverstate_t *)stat_sharm;
+    memset(st, 0, sizeof(driverstate_t));
+    err = rt_heap_free(&driver_stat_heap, stat_sharm);
+    if(err < 0){
+        fprintf(stderr, "state heap free faile in init : %d", err);
+        return -1;
+    }
+    
     err = rt_queue_create(&tarpos_queue, TARPOS_QUEUE_NAME, 4*6*1024*1024, 
                             Q_UNLIMITED, Q_PRIO|Q_SHARED);
     if(err < 0){
         fprintf(stderr, "create message queue create failed: %s\n", strerror(err));
+        return -1;
+    }
+    
+    return 0;
+}
+
+int main(void)
+{
+    signal(SIGTERM, endsignal);
+	signal( SIGINT , endsignal );
+
+    // rt_print_auto_init(1);
+    err = mlockall(MCL_CURRENT|MCL_FUTURE);
+    if(err < 0){
+        fprintf(stderr,"mlock failed: %s\n", strerror(err));
+        return -1;
+    }
+
+    if(init() < 0){
+        perror("init fail in main: \n");
         return -1;
     }
 
@@ -108,8 +132,7 @@ int main(void)
         fprintf(stderr,"drive_init start failed: %s\n",strerror(err));
         return -1;
     }
-    sleep(30);
-    printf("init done!\n");
+
     err = rt_task_spawn(&rt_PTP_task,"PTP_task", 0, 90, 0,
                         &PTP,NULL);
     if(err < 0){

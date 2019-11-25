@@ -17,3 +17,6 @@ build*
 *.Release
 teachview/Eigen/SparseCore
 *.json
+*ui_*.h
+*build*Debug/*
+*.md

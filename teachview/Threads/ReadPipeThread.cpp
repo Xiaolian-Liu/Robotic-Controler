@@ -9,14 +9,8 @@ QMutex posMut;
 ReadpipeThread::ReadpipeThread()
 {
     bstop = false;
-
-    pipe_fd = open("/dev/rtp0",O_RDWR);/* open will block until the file can't be opened */
-    if(pipe_fd < 0){
-        perror("pipe open fail");
-    }/* open will block until the file can be opened */
-    else{
-        start();
-    }
+    start();
+}
 
 
 //    pipe_file.setFileName("/dev/rtp0");
@@ -26,7 +20,7 @@ ReadpipeThread::ReadpipeThread()
 //    else{
 //        perror("pipe open fail");
 //    }
-}
+
 
 ReadpipeThread::~ReadpipeThread()
 {
@@ -37,6 +31,11 @@ ReadpipeThread::~ReadpipeThread()
 
 void ReadpipeThread::run()
 {
+    pipe_fd = open("/dev/rtp0",O_RDWR);/* open will block until the file can't be opened */
+    if(pipe_fd < 0){
+        perror("pipe open fail");
+    }/* open will block until the file can be opened */
+
     datacount = 0;
     incpos_t  inctarpos;
     joinpos_t joitarpos;
