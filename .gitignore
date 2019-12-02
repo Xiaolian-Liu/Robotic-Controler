@@ -20,3 +20,5 @@ teachview/Eigen/SparseCore
 *ui_*.h
 *build*Debug/*
 *.md
+teachview/Makefile
+teachview/Makefile

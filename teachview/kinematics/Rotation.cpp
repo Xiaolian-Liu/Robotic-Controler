@@ -1,5 +1,6 @@
 #include "Rotation.h"
-#include "kinematics.h"
+#include "transform.h"
+
 Rotation::Rotation(double a, double b, double c, char mode)
 {
     if('e' == mode)

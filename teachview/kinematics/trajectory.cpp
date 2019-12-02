@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include "circle.h"
 
 vectord julipt(double x0, double xf, double a, double v, int f)
 {
@@ -237,4 +238,27 @@ int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f)
 		angleout << std::endl;
     }
     return 0;
+}
+
+int cirtraj(vecposition & p, point p0, point pi, point pf, int a, int v, int f)
+{
+	double acc = a * LMAXACC / 100.0;
+	double vel = v * LMAXVEL / 100.0;
+	Circle cir(p0, pi, pf);
+	double Sf = cir.arclen();
+	vectord s, sd, sdd;
+	ulspb(s, sd, sdd, 0, Sf, a, v, f);
+	int N = s.size();
+	p.resize(N);
+	Matrix3d R;
+	R = cir.SO3();
+	Vector3d c;
+	c = cir.Pc();
+
+	for (int i = 0; i < N; i++)
+	{
+		p[i] = c + R * cir.coordposi(s[i]*Sf);
+	}
+
+	return 0;
 }

@@ -5,6 +5,7 @@
 #include <queue>
 #include <Eigen/Dense>
 #include "er20.h"
+#include "circle.h"
 
 
 #ifndef PI
@@ -19,6 +20,7 @@ typedef std::vector<double> vectord;    //The STL of C++
 
 typedef vector<cartpos_t> vectorpos;
 typedef vector<joinpos_t> vectorangle;
+typedef vector<Vector3d> vecposition;
 
 
 /*****************************************************************
@@ -51,5 +53,10 @@ int lintraj(vectorpos & p, cartpos_t p0, cartpos_t pf , int a, int v, int f = 50
 
 int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f = 500);
 
+/* the circle trajectory function 
+ arguments: p0, pi, pf, 3 points determine a circle; a, v, f, the motion parameters 
+ returns: vecposition p --- the position sequence of the manipulator end */
+
+int cirtraj(vecposition & p, point p0, point pi, point pf, int a, int v, int f = 500);
 
 #endif

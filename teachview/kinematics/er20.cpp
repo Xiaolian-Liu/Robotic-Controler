@@ -3,7 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <Eigen/Dense>
-#include "kinematics.h"
+#include "transform.h"
 
 using namespace Eigen;
 using namespace std;
@@ -176,7 +176,7 @@ int forkine(const double jointangle[6], cartpos_t *pos)
 			0,  0, 1;
 	R70 = R60 * R76;
 
-	Vector3d rpy = tr2rpy(R70);
+	Vector3d rpy = ro2rpy(R70);
 	pos->Rx0 = rpy(0);
 	pos->Ry0 = rpy(1);
 	pos->Rz0 = rpy(2);
