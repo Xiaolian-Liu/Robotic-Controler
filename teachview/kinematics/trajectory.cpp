@@ -262,3 +262,54 @@ int cirtraj(vecposition & p, point p0, point pi, point pf, int a, int v, int f)
 
 	return 0;
 }
+
+int cirtraj(seqJointVec & seqangle, Vector3d rpy, point p0, point pi, point pf, int a, int v, int f)
+{
+	vecposition p;
+	cirtraj(p, p0, pi, pf, a, v, f);
+	size_t N = p.size();
+	seqCartPose pose;
+	pose.resize(N);
+	seqangle.resize(N);
+	pose[0].pe = p0;
+	pose[0].rpy = rpy;
+	JointVec join0;
+	join0 << 0, 0, 0, 0, 0, 0;
+	if (invkine(seqangle[0], join0, pose[0]) < 0) {
+		std::cout << "inverse kinematics failed in cirtraj \n";
+		return -1;
+	}
+	//cartpos_t pos;
+	//pos.pe[0] = p0[0];
+	//pos.pe[1] = p0[1];
+	//pos.pe[2] = p0[2];
+	//pos.Rx0 = rpy[0];
+	//pos.Ry0 = rpy[1];
+	//pos.Rz0 = rpy[2];
+	//double lastjointangle[6] = { 0,0,0,0,0,0 };
+	//double jointangle[6];
+	//if (invkine(pos, lastjointangle, jointangle) < 0) {
+	//	std::cout << "inverse kinematics failed twice\n";
+	//		return -1;
+	//}
+	for (size_t i = 1; i < N; i++)
+	{
+		pose[i].pe = p[i];
+		pose[i].rpy = rpy;
+		if (invkine(seqangle[i], seqangle[i - 1], pose[i]) != 0) {
+			std::cout << "inverse kinematics failed in cirtraj \n";
+			return -1;
+		}
+	}
+	std::ofstream angleout;
+	angleout.open("angles.txt");
+	for (size_t i = 0; i < seqangle.size(); i++)
+	{
+		for (int j = 0; j < 6; j++) {
+			angleout << seqangle[i][j] << " ";
+		}
+		angleout << std::endl;
+	}
+	angleout.close();
+	return 0;
+}

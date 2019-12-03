@@ -9,7 +9,7 @@
 
 
 #ifndef PI
-#define PI 3.1415926545
+#define PI 3.14159265358979323846
 #endif
 
 using namespace Eigen;
@@ -53,10 +53,13 @@ int lintraj(vectorpos & p, cartpos_t p0, cartpos_t pf , int a, int v, int f = 50
 
 int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f = 500);
 
-/* the circle trajectory function 
- arguments: p0, pi, pf, 3 points determine a circle; a, v, f, the motion parameters 
- returns: vecposition p --- the position sequence of the manipulator end */
+/************************************************************************************
+ * the circle trajectory function 
+ * arguments: p0, pi, pf, 3 points determine a circle; a, v, f, the motion parameters 
+ * returns: vecposition p --- the position sequence of the manipulator end 
+ ************************************************************************************/
 
 int cirtraj(vecposition & p, point p0, point pi, point pf, int a, int v, int f = 500);
+int cirtraj(seqJointVec & seqangle, Vector3d rpy, point p0, point pi, point pf, int a, int v, int f = 500);
 
 #endif

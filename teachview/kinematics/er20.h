@@ -3,25 +3,63 @@
 #define ER20CTEST	0
 
 #ifndef PI
-#define PI 3.141592653589793
+#define PI 3.14159265358979323846
 #endif
+
+/* can't define pi, because the Eigen use pi,
+	if pi is defined here, compile err occurs */
+//#ifndef pi
+//#define pi 3.14159265358979323846
+//#endif
+
+#ifndef PI_2
+#define PI_2 1.57079632679489661923
+#endif // !pi_2
+
 #include <stdint.h>		/* where int32_t is included */
+#include <Eigen/Dense>
+#include <vector>
 /*
 #ifndef int32_t
 #define int32_t int
 #endif
 */
 
+/* don't forget that using namespace */
+using namespace Eigen;
+using std::vector;
 ///The datatype
 
 //The D-H linkage parameters, the length unit: mm, the angular unit: rad/degree
 #define ER20_a1  168.46
-#define ER20_d1  504
 #define ER20_a2  781.55
 #define ER20_a3  140.34
+#define ER20_a4  0
+#define ER20_a5  0
+#define ER20_a6  0
+
+#define alpha1	PI_2
+#define alpha2	0
+#define alpha3	PI_2
+#define alpha4	-PI_2
+#define alpha5	PI_2
+#define alpha6	0
+
+#define ER20_d1  504
+#define ER20_d2  0
 #define ER20_d3  (-0.3)
 #define ER20_d4  760.39
+#define ER20_d5  0
 #define ER20_d6  125
+
+/* the offset between the D-H system and the Jointangle */
+#define offset1 0
+#define offset2 PI_2
+#define offset3 0
+#define offset4 0
+#define offset5 0
+#define offset6 0
+
 
 // The reduction ratio of axies
 #define ER20_I1 		(-147)
@@ -104,12 +142,22 @@ typedef struct
 }cartpos_t;		//The cartesian coordinate system position type
 #endif
 
+typedef struct
+{
+	Vector3d pe;
+	Vector3d rpy;
+}CartPose;
+typedef vector<CartPose> seqCartPose;
+
 #ifndef joinpos_t
 typedef struct 
 {
 	double joi[6];
 }joinpos_t;
 #endif
+
+typedef Matrix<double, 6, 1> JointVec;
+typedef vector<JointVec> seqJointVec; /* the sequence of JointVec*/
 
 #ifndef incpos_t
 typedef struct
@@ -118,6 +166,8 @@ typedef struct
 }incpos_t;
 #endif
 
+typedef Matrix<double, 6, 1> DriveVec;
+typedef Matrix<double, 6, 1> DHsysVec;
 
 //The func
 /*************************************************************************
@@ -137,7 +187,8 @@ double rad2degree(double theta);
 void jointangle2theta(const double joinang[6], double theta[6]);
 void theta2jointangle(const double theta[6], double joinang[6]);
 
-
+DHsysVec Joint2DH(JointVec);
+JointVec DH2Joint(DHsysVec);
 
 /************************************************************************
  * 	The transformation between incremental and jointangle
@@ -145,8 +196,16 @@ void theta2jointangle(const double theta[6], double joinang[6]);
 joinpos_t increment2jointangle(const incpos_t & in);
 incpos_t jointangle2increment(const joinpos_t & jo);
 
+JointVec Drive2Joint(DriveVec);
+DriveVec Joint2Drive(JointVec);
 
-
+/*************************************************************************
+ * the Homogeneous transformation matrix constructor,
+ * arguments: angle is the rotation angle of the manipulator, units: degree
+ *			  index is the No of A, range from 0 to 5
+ * returns:  the 4X4 HT matrix
+ *************************************************************************/
+Matrix4d A(double angle, int index);
 
 /*************************************************************************
  * The forward kinematics transfer function,
@@ -158,7 +217,7 @@ incpos_t jointangle2increment(const joinpos_t & jo);
    .....
  *************************************************************************/
 int forkine(const double jointangle[6], cartpos_t *pos);
-
+int forkine(CartPose & pose, JointVec angles);
 
 
 /*************************************************************************
@@ -167,6 +226,8 @@ int forkine(const double jointangle[6], cartpos_t *pos);
  //theta[] is the angle of six joints,
  * **********************************************************************/
 int invkine(const cartpos_t &pos, const double lastjointangle[6], double jointangle[6]);
+int invkine(JointVec & angles, JointVec lastangles, CartPose pose);
+//seqJointVec invkine(JointVec j0, CartPose pf);
 
 void jointangle_show(const double jointangle[6]);
 
