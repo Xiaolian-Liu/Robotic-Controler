@@ -610,7 +610,7 @@ void ecat_task(void *arg)
         if(err < 0){
             rt_fprintf(stderr, "timely data pipe write failed in EcatDrive.cpp: %d\n", err);
         }
-        
+        // rt_printf("1\n");
         err = rt_heap_free(&data_heap, data_sharm);
         if(err < 0)
             rt_fprintf(stderr, "data heap free fail in EcatDrive.cpp : %d\n", err);

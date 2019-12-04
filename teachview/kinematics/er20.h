@@ -166,7 +166,7 @@ typedef struct
 }incpos_t;
 #endif
 
-typedef Matrix<double, 6, 1> DriveVec;
+typedef Matrix<int32_t, 6, 1> DriveVec;
 typedef Matrix<double, 6, 1> DHsysVec;
 
 //The func

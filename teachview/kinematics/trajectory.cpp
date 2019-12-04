@@ -247,7 +247,7 @@ int cirtraj(vecposition & p, point p0, point pi, point pf, int a, int v, int f)
 	Circle cir(p0, pi, pf);
 	double Sf = cir.arclen();
 	vectord s, sd, sdd;
-	ulspb(s, sd, sdd, 0, Sf, a, v, f);
+	ulspb(s, sd, sdd, 0, Sf, acc, vel, f);
 	int N = s.size();
 	p.resize(N);
 	Matrix3d R;

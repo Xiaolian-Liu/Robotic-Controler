@@ -31,7 +31,7 @@ typedef struct
 }driverdata_t;
 
 extern QVector<double> tarposition[6];
-extern QVector<double> poscount;
+extern QVector<double> runtime;
 extern QMutex posMut;
 class ReadpipeThread : public QThread
 {

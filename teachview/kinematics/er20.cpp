@@ -174,7 +174,7 @@ JointVec Drive2Joint(DriveVec d)
 
 DriveVec Joint2Drive(JointVec jo)
 {
-	JointVec p;
+	DriveVec p;
 	for (int i = 0; i < 5; i++)
 	{
 		p(i) = jo(i) * (1 << BITS)*ratio[i] / 360 + incoff[i];
@@ -326,7 +326,7 @@ int invkine(const cartpos_t &pos, const double lastjointangle[6], double jointan
 	
 	Vector3d rpy;
 	rpy << pos.Rx0, pos.Ry0, pos.Rz0;
-	R70 = rpy2ro(rpy);
+	R70 = rpy2ro(rpy, 'd');
 
 	R76 << 1, 0, 0,
 		   0, 1, 0,

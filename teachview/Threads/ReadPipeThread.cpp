@@ -3,7 +3,7 @@
 #include <kinematics/er20.h>
 
 QVector<double> tarposition[6];
-QVector<double> poscount;
+QVector<double> runtime;
 QMutex posMut;
 
 ReadpipeThread::ReadpipeThread()
@@ -39,7 +39,7 @@ void ReadpipeThread::run()
     datacount = 0;
     incpos_t  inctarpos;
     joinpos_t joitarpos;
-    std::ofstream dataout("targetposition.txt");
+//    std::ofstream dataout("targetposition.txt");
     while(!bstop)
     {
 
@@ -56,13 +56,12 @@ void ReadpipeThread::run()
         posMut.lock();
         for(int i=0; i<6; i++){
             // pos.update(data.TargetPosition);
-            tarposition[i].push_back(joitarpos.joi[i]);
-            dataout << data.TargetPosition[i] << '\t';
+            tarposition[i].push_back(double(joitarpos.joi[i]));
+//            dataout << data.TargetPosition[i] << '\t';
         }
-        dataout << std::endl;
-        poscount.push_back(datacount);
-        posMut.unlock();
-        // emit Readsucceed(pos);
+//        dataout << std::endl;
+        runtime.push_back(datacount/2000.0);
+        posMut.unlock();        // emit Readsucceed(pos);
     }
 }
 

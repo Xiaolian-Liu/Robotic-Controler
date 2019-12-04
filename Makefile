@@ -45,9 +45,10 @@ OBJECTS = 	Objects/robot.o \
 			Objects/drive.o \
 			Objects/EcatDrive.o \
 			Objects/er20.o \
-			Objects/kinematics.o \
+			Objects/transform.o \
 			Objects/motion.o \
-			Objects/trajectory.o
+			Objects/trajectory.o\
+			Objects/circle.o
 
 TARGET        = robot.run
 
@@ -104,19 +105,25 @@ Objects/EcatDrive.o: EcatDrive/EcatDrive.cpp EcatDrive/EcatDrive.h \
 					EcatDrive/ecrt.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 Objects/er20.o: teachview/kinematics/er20.cpp teachview/kinematics/er20.h \
- 				teachview/kinematics/kinematics.h
+ teachview/kinematics/transform.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
-Objects/kinematics.o: teachview/kinematics/kinematics.cpp \
- teachview/kinematics/kinematics.h
+Objects/transform.o: teachview/kinematics/transform.cpp \
+ teachview/kinematics/transform.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 Objects/motion.o: teachview/kinematics/motion.cpp teachview/kinematics/motion.h \
- teachview/kinematics/trajectory.h teachview/kinematics/er20.h
+ teachview/kinematics/trajectory.h teachview/kinematics/er20.h \
+ teachview/kinematics/circle.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
 Objects/trajectory.o: teachview/kinematics/trajectory.cpp \
- teachview/kinematics/trajectory.h teachview/kinematics/er20.h
+ teachview/kinematics/trajectory.h teachview/kinematics/er20.h \
+ teachview/kinematics/circle.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
+
+Objects/circle.o: teachview/kinematics/circle.cpp teachview/kinematics/circle.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
+
 
 ####### Install
 
