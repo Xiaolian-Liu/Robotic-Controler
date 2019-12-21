@@ -267,4 +267,8 @@ Matrix3d oa2r(Vector3d o, Vector3d a)
 	o.normalize();
 	a.normalize();
 	Matrix3d R;
+	R.col(0) = n;
+	R.col(1) = o;
+	R.col(2) = a;
+	return R;
 }

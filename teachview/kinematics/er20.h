@@ -85,8 +85,8 @@ using std::vector;
 #define INCOFF2 	-157781
 #define INCOFF3		9281
 #define INCOFF4		3402
-#define INCOFF5		2700548
-#define INCOFF6		13270
+#define INCOFF5		92418
+#define INCOFF6		27715
 
 // The bits of encoders in the momotor
 #define BITS 	17

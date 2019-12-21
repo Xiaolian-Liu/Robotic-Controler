@@ -240,13 +240,13 @@ int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f)
     return 0;
 }
 
-int cirtraj(vecposition & p, point p0, point pi, point pf, int a, int v, int f)
+int cirtraj(vectord & s, vecposition & p, point p0, point pi, point pf, int a, int v, int f)
 {
 	double acc = a * LMAXACC / 100.0;
 	double vel = v * LMAXVEL / 100.0;
 	Circle cir(p0, pi, pf);
 	double Sf = cir.arclen();
-	vectord s, sd, sdd;
+	vectord sd, sdd;
 	ulspb(s, sd, sdd, 0, Sf, acc, vel, f);
 	int N = s.size();
 	p.resize(N);
@@ -263,16 +263,17 @@ int cirtraj(vecposition & p, point p0, point pi, point pf, int a, int v, int f)
 	return 0;
 }
 
-int cirtraj(seqJointVec & seqangle, Vector3d rpy, point p0, point pi, point pf, int a, int v, int f)
+int cirtraj(seqJointVec & seqangle, Vector3d rpy0, Vector3d rpyf,point p0, point pi, point pf, int a, int v, int f)
 {
 	vecposition p;
-	cirtraj(p, p0, pi, pf, a, v, f);
+	vectord s;
+	cirtraj(s, p, p0, pi, pf, a, v, f);
 	size_t N = p.size();
 	seqCartPose pose;
 	pose.resize(N);
 	seqangle.resize(N);
 	pose[0].pe = p0;
-	pose[0].rpy = rpy;
+	pose[0].rpy = rpy0;
 	JointVec join0;
 	join0 << 0, 0, 0, 0, 0, 0;
 	if (invkine(seqangle[0], join0, pose[0]) < 0) {
@@ -295,7 +296,7 @@ int cirtraj(seqJointVec & seqangle, Vector3d rpy, point p0, point pi, point pf, 
 	for (size_t i = 1; i < N; i++)
 	{
 		pose[i].pe = p[i];
-		pose[i].rpy = rpy;
+		pose[i].rpy = rpy0 + s[i]*(rpyf-rpy0);
 		if (invkine(seqangle[i], seqangle[i - 1], pose[i]) != 0) {
 			std::cout << "inverse kinematics failed in cirtraj \n";
 			return -1;

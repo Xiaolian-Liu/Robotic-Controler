@@ -114,8 +114,14 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int
         // vjoin.push_back(jp);
 		incpos_t ip = jointangle2increment(jp);
 		err = rt_queue_write(&tarpos, &ip, sizeof(incpos_t), Q_NORMAL);
-		if(err < 0){
+		if(err < 0)
+		{
 			rt_fprintf(stderr, "target position queue write failed in motion.cpp:ptp() : %d", err);
+			if(-ENOMEM == err)
+			{
+				rt_task_sleep(10000000);
+				i--;
+			}
 		}	
     }
 	err = rt_queue_unbind(&tarpos);
@@ -342,11 +348,11 @@ void PTP(void *cookie)
 	// cartpos_t cp1;
 	// forkine(ij1.joi, &cp1);
 	cartpos_t cp1;
-	cp1.pe[0] = 1000; cp1.pe[1] = 500; cp1.pe[2] = 1000;
-	cp1.Rx0 = 180; cp1.Ry0 = 0; cp1.Rz0 = 0;
+	cp1.pe[0] = 1000; cp1.pe[1] = 500; cp1.pe[2] = 800;
+	cp1.Rx0 = 140; cp1.Ry0 = 0; cp1.Rz0 = 0;
 	joinpos_t jp1;
 	invkine(cp1, ij0.joi, jp1.joi);
-	if(ptp(ij0, jp1, TARPOS_QUEUE_NAME, 30, 30) < 0){
+	if(ptp(ij0, jp1, TARPOS_QUEUE_NAME, 5, 5) < 0){
 		rt_printf("PTP function failed\n");
 	}
 /* 
@@ -362,13 +368,14 @@ void PTP(void *cookie)
 */
 
 	point p0, pi, pf;
-	p0 << 1000, 500, 1000;
-	pi << 1500, 0, 300;
-	pf << 1000, -500, 1000;
-	Vector3d rpy;
-	rpy << 180, 0, 0;
+	p0 << 1000, 500, 800;
+	pi << 1500, 0, 800;
+	pf << 1000, -500, 800;
+	Vector3d rpy0, rpyf;
+	rpy0 << 140, 0, 0;
+	rpyf << 220, 0, 0;
 	seqJointVec jointangles;
-	cirtraj(jointangles, rpy, p0, pi, pf, 30, 40);
+	cirtraj(jointangles, rpy0, rpyf, p0, pi, pf, 5, 5);
 
 	RT_QUEUE tarpos;					   
 	err = rt_queue_bind(&tarpos, TARPOS_QUEUE_NAME, TM_INFINITE);
@@ -394,8 +401,8 @@ void PTP(void *cookie)
 			}
 		}
 	}
-
-	cirtraj(jointangles, rpy, pf, pi, p0, 30, 40);
+ 
+	cirtraj(jointangles, rpyf, rpy0, pf, pi, p0, 5, 5);
 	for(size_t i=0; i<jointangles.size(); i++)
 	{
 		DriveVec ip = Joint2Drive(jointangles[i]);
@@ -440,7 +447,7 @@ void PTP(void *cookie)
 		rt_printf("PTP function failed\n");
 	}
  */
-	if(ptp(jp1, dabao1, TARPOS_QUEUE_NAME, 30, 30) < 0){
+	if(ptp(jp1, dabao1, TARPOS_QUEUE_NAME, 5, 5) < 0){
 		rt_printf("PTP function failed\n");
 	}
 

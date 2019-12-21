@@ -21,6 +21,7 @@ typedef std::vector<double> vectord;    //The STL of C++
 typedef vector<cartpos_t> vectorpos;
 typedef vector<joinpos_t> vectorangle;
 typedef vector<Vector3d> vecposition;
+typedef vector<Vector3d> vecrpyangles;
 
 
 /*****************************************************************
@@ -48,7 +49,6 @@ vectord jlipt(double x0, double xf, double a, double v, int f = 500);
 // unit Linear segment with parabolic blend
 int ulspb(vectord & s, vectord & sd, vectord & sdd, double s0, double sf, double a, double v , int f = 500);
 
-
 int lintraj(vectorpos & p, cartpos_t p0, cartpos_t pf , int a, int v, int f = 500);
 
 int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f = 500);
@@ -59,7 +59,7 @@ int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f = 
  * returns: vecposition p --- the position sequence of the manipulator end 
  ************************************************************************************/
 
-int cirtraj(vecposition & p, point p0, point pi, point pf, int a, int v, int f = 500);
-int cirtraj(seqJointVec & seqangle, Vector3d rpy, point p0, point pi, point pf, int a, int v, int f = 500);
+int cirtraj(vectord & S, vecposition & p, point p0, point pi, point pf, int a, int v, int f = 500);
+int cirtraj(seqJointVec & seqangle, Vector3d rpy0, Vector3d rpyf, point p0, point pi, point pf, int a, int v, int f = 500);
 
 #endif
