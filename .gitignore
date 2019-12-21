@@ -22,3 +22,4 @@ teachview/Eigen/SparseCore
 *.md
 teachview/Makefile
 teachview/Makefile
+teachview/kinematics/test.cpp

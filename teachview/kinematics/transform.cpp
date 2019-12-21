@@ -1,5 +1,9 @@
 #include "transform.h"
 #include <cmath>
+#include <cfloat>
+#include <iostream>
+using std::cout;
+using std::endl;
 
 #ifndef pi
 #define pi	3.1415926545
@@ -127,4 +131,140 @@ Matrix3d rpy2ro(Vector3d rpy, char mode)
 		   -sin(B),       cos(B)*sin(y),                        cos(B)*cos(y);
 	
 	return R70;
+}
+
+Matrix3d skew(Vector3d k)
+{
+	k.normalize();
+	Matrix3d S;
+	S << 0,		-k(2),	k(1),
+		k(2),	0,		-k(0),
+		-k(1),	k(0),	0;
+	return S;
+}
+
+Matrix3d angvec2r(double theta, Vector3d k, char mode)
+{
+	if ('d' == mode)
+	{
+		theta = theta * pi / 180;
+	}
+	k.normalize();
+	Matrix3d sk = skew(k);
+	Matrix3d R = Matrix3d::Identity() + sin(theta)*sk + (1 - cos(theta))*sk*sk;
+	return R;
+}
+
+int tr2angvec(double & theta, Vector3d & k, Matrix3d R, char mode)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		R.row(i).normalize();
+	}
+
+	if (abs(R.determinant() - 1) > 10 * DBL_EPSILON)
+	{
+		cout << "tr2angvec:badarg, matrix is not orthonormal" << endl;
+		return -1;
+	}
+	Vector3d v;
+	double th;
+	trlog(th, v, R);
+	theta = th;
+	k = v;
+
+	if ('d' == mode)
+	{
+		theta = theta * 180 / pi;
+	}
+	return 0;
+}
+
+int trlog(double & theta, Vector3d & w, Matrix3d R, char mode)
+{
+	if (abs(R.trace() - 3) < 100 * DBL_EPSILON)
+	{
+		w << 0, 0, 0;
+		theta = 0;
+	}
+	else if (abs(R.trace()+1) < 100*DBL_EPSILON)
+	{
+		Vector3d dia = R.diagonal();
+		int k = 0;
+		double mx = dia.maxCoeff(&k);
+		Matrix3d I = Matrix3d::Identity();
+		Vector3d col = R.col(k) + I.col(k);
+		w = col / sqrt(2 * (1 + mx));
+		theta = pi;
+	}
+	else
+	{
+		theta = acos((R.trace() - 1) / 2);
+		Matrix3d skw = (R - R.inverse()) / 2 / sin(theta);
+		w = vex(skw);
+	}
+	if ('d' == mode)
+	{
+		theta = theta * 180 / pi;
+	}
+	return 0;
+}
+
+Vector3d vex(Matrix3d S)
+{
+	Vector3d v;
+	v <<	0.5*(S(2, 1) - S(1, 2)),	
+			0.5*(S(0, 2) - S(2, 0)),	
+			0.5*(S(1, 0) - S(0, 1));
+	return v;
+}
+
+Matrix3d rotx(double theta, char mode)
+{
+	if ('d' == mode)
+	{
+		theta = theta * pi / 180;
+	}
+	Matrix3d R;
+	R <<	1,	0,				0,
+			0,	cos(theta),		-sin(theta),
+			0,	sin(theta),		cos(theta);
+	return R;
+}
+
+Matrix3d roty(double theta, char mode)
+{
+	if ('d' == mode)
+	{
+		theta = theta * pi / 180;
+	}
+	Matrix3d R;
+	R << cos(theta),  0,	sin(theta),
+		    0,		  1,		0,
+		 -sin(theta), 0,	cos(theta);
+
+	return R;
+}
+
+Matrix3d rotz(double theta, char mode)
+{
+	if ('d' == mode)
+	{
+		theta = theta * pi / 180;
+	}
+	Matrix3d R;
+	R << cos(theta),	-sin(theta),	0,
+		 sin(theta),	cos(theta),		0,
+		     0,				0,			1;
+	return R;
+}
+
+Matrix3d oa2r(Vector3d o, Vector3d a)
+{
+	Vector3d n = o.cross(a);
+	o = a.cross(n);
+	n.normalize();
+	o.normalize();
+	a.normalize();
+	Matrix3d R;
 }
