@@ -296,6 +296,7 @@ void PTP(void *cookie)
 		err = rt_heap_alloc(&stat_heap, 0, TM_INFINITE, &stat_sharm);
     	if(err < 0){
 			rt_fprintf(stderr, "state heap alloc faile in motion.cpp:PTP() : %d", err);
+			continue;
 		}
 
 		state = (driverstate_t *) stat_sharm;

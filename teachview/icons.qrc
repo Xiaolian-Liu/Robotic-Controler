@@ -12,5 +12,15 @@
         <file>icons/save.png</file>
         <file>icons/panda.ico</file>
         <file>icons/plot.png</file>
+        <file>icons/disable.png</file>
+        <file>icons/enable.png</file>
+        <file>icons/pause.png</file>
+        <file>icons/run.png</file>
+        <file>icons/stop.png</file>
+        <file>icons/faultreset.png</file>
+        <file>icons/plus.png</file>
+        <file>icons/plus1.png</file>
+        <file>icons/minus.png</file>
+        <file>icons/close.png</file>
     </qresource>
 </RCC>

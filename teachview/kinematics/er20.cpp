@@ -202,7 +202,7 @@ const double MIN_theta[6] =
 	degree2rad(MIN_jointangle[5]) + theta_offset[5]
 };
 
-const double ER20_Weig[6] = { 0.2, 0.3, 0.2, 0.15, 0.1, 0.5 };
+const double ER20_Weig[6] = { 0.2, 0.3, 0.2, 0.15, 0.1, 0.05 };
 
 Matrix4d A(double angle, int i)
 {
