@@ -6,6 +6,7 @@
 #include <commu.h>
 #include "motion.h"
 #include "circle.h"
+#include "transform.h"
 
 const joinpos_t  home = {{0, 0 , 0, 0, 0, 0}};
 const incpos_t  dabao = {-59471, 3373567, 3254210, 3424, 107103, 121782};
@@ -256,7 +257,7 @@ void PTP(void *cookie)
 
 
 	joinpos_t ijhome = {{0,0,0,0,-90,0}};
-	if(ptp(ij0, ijhome, TARPOS_QUEUE_NAME, 10, 10) < 0){
+	if(ptp(ij0, ijhome, TARPOS_QUEUE_NAME, 30, 15) < 0){
 		rt_printf("PTP function failed\n");
 	}
 	joinpos_t jps;
@@ -265,7 +266,7 @@ void PTP(void *cookie)
 	cps.Rx0 = -180; cps.Ry0 = 0; cps.Rz0 = 0;
 	invkine(cps, ijhome.joi, jps.joi);
 
-	if(ptp(ijhome, jps, TARPOS_QUEUE_NAME, 10, 10) < 0){
+	if(ptp(ijhome, jps, TARPOS_QUEUE_NAME, 30, 15) < 0){
 		rt_printf("PTP function failed\n");
 	}
 	
@@ -275,21 +276,22 @@ void PTP(void *cookie)
 		rt_fprintf(stderr, "target position queue bind failed in motion.cpp:ptp() : %d", err);
 	}
 
-	CartPose ps,p0, pi, pf;
+	CartPose ps, p0, pi, pf;
 	ps.pe << 1000, 100, cps.pe[2];
 	ps.rpy << -180, 0, 0;
 
-	p0.pe << 1000, 100, 590;
+	p0.pe << 1000, 100, 586;
 	p0.rpy << -180, 0, 0;
 
-	pi.pe << 1100, 0, 590;
+	pi.pe << 1100, 0, 586;
 	pi.rpy << -180, 0, 0;
 
-	pf.pe << 1000, -100, 590;
+	pf.pe << 1000, -100, 586;
 	pf.rpy << -180, 0, 0;
 
 
 	seqJointVec angles;
+/* 
 	lin(angles, ps, p0, 5, 5);
 	for(size_t i=0; i<angles.size(); i++)
 	{
@@ -310,7 +312,7 @@ void PTP(void *cookie)
 		}
 	}
 
-	lin(angles, p0, pi, 5, 5);
+	lin(angles, p0, pi, 20, 10);
 	for(size_t i=0; i<angles.size(); i++)
 	{
 		DriveVec ip = Joint2Drive(angles[i]);
@@ -331,7 +333,7 @@ void PTP(void *cookie)
 	}
 
 
-	lin(angles, pi, pf, 5, 5);
+	lin(angles, pi, pf, 20, 10);
 	for(size_t i=0; i<angles.size(); i++)
 	{
 		DriveVec ip = Joint2Drive(angles[i]);
@@ -351,7 +353,7 @@ void PTP(void *cookie)
 		}
 	}
 
-	lin(angles, pf, p0, 5, 5);
+	lin(angles, pf, p0, 20, 10);
 	for(size_t i=0; i<angles.size(); i++)
 	{
 		DriveVec ip = Joint2Drive(angles[i]);
@@ -370,10 +372,111 @@ void PTP(void *cookie)
 			}
 		}
 	}
-	while(run)
+
+	cir(angles, T0, Ti, Tf, 20, 20);
+	for(size_t i=0; i<angles.size(); i++)
 	{
-		rt_task_sleep(1000000000);
+		DriveVec ip = Joint2Drive(angles[i]);
+		incpos_t ipo;
+		for(int j=0; j<6; j++)
+		{
+			ipo.inc[j] = ip[j];
+		}
+		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0)
+		{
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
 	}
+ */
+
+
+	p0.rpy << -220, 0, 0;
+	pi.rpy << -180, 0, 0;
+	pf.rpy << -140, 0, 0;
+	Matrix3d R0, Ri, Rf;
+	Matrix4d T0, Ti, Tf;
+	R0 = rpy2ro(p0.rpy, 'd');
+	Ri = rpy2ro(pi.rpy, 'd');
+	Rf = rpy2ro(pf.rpy, 'd');
+	T0 = transl(p0.pe, R0);
+	Ti = transl(pi.pe, Ri);
+	Tf = transl(pf.pe, Rf);
+
+	lin(angles, ps, p0, 5, 5);
+	for(size_t i=0; i<angles.size(); i++)
+	{
+		DriveVec ip = Joint2Drive(angles[i]);
+		incpos_t ipo;
+		for(int j=0; j<6; j++)
+		{
+			ipo.inc[j] = ip[j];
+		}
+		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0)
+		{
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
+	}
+
+	lin(angles, p0, pf, 5, 5);
+	for(size_t i=0; i<angles.size(); i++)
+	{
+		DriveVec ip = Joint2Drive(angles[i]);
+		incpos_t ipo;
+		for(int j=0; j<6; j++)
+		{
+			ipo.inc[j] = ip[j];
+		}
+		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0)
+		{
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
+	}
+
+	Rf = rpy2ro(pf.rpy, 'd');
+	Vector3d kb, k;
+	kb << 0, 0, 1;
+	k = Rf.inverse()*kb;
+	Matrix3d Rf0 = angvec2r(PI, k);
+	R0 = Rf * Rf0;
+	Ri = Rf * angvec2r(PI_2, k);
+	T0 = transl(p0.pe, R0);
+	Ti = transl(pi.pe, Ri);
+	Tf = transl(pf.pe, Rf);
+	arc(angles, Tf, Ti, T0, 5, 3);
+	for(size_t i=0; i<angles.size(); i++)
+	{
+		DriveVec ip = Joint2Drive(angles[i]);
+		incpos_t ipo;
+		for(int j=0; j<6; j++)
+		{
+			ipo.inc[j] = ip[j];
+		}
+		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0)
+		{
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
+	}
+
 	lin(angles, p0, ps, 5, 5);
 	for(size_t i=0; i<angles.size(); i++)
 	{
@@ -399,119 +502,14 @@ void PTP(void *cookie)
 		rt_fprintf(stderr, "target position queue unbind failed in motion.cpp:PTP() : %d", err);
 	}
 	
-	if(ptp(jps, ijhome, TARPOS_QUEUE_NAME, 10, 10) < 0){
+	if(ptp(jps, ijhome, TARPOS_QUEUE_NAME, 30, 15) < 0){
 		rt_printf("PTP function failed\n");
 	}
 
-	if(ptp(ijhome, ij0, TARPOS_QUEUE_NAME, 10, 10) < 0){
-		rt_printf("PTP function failed\n");
-	}
-/*
-	cartpos_t cp1;
-	cp1.pe[0] = 1000; cp1.pe[1] = 500; cp1.pe[2] = 800;
-	cp1.Rx0 = 140; cp1.Ry0 = 0; cp1.Rz0 = 0;
-	joinpos_t jp1;
-	invkine(cp1, ij0.joi, jp1.joi);
-	if(ptp(ij0, jp1, TARPOS_QUEUE_NAME, 5, 5) < 0){
+	if(ptp(ijhome, dabao1, TARPOS_QUEUE_NAME, 30, 15) < 0){
 		rt_printf("PTP function failed\n");
 	}
 
-	cartpos_t cp2;
-	cp2.pe[0] = cp1.pe[0];
-	cp2.pe[1] = -1000;
-	cp2.pe[2] = cp1.pe[2];
-	cp2.Rx0 = cp1.Rx0;
-	cp2.Ry0 = cp1.Ry0;
-	cp2.Rz0 = cp1.Rz0;
-	vectorangle jang;
-	lintraj(jang, ij1, cp2, 20, 10);
-*/
-/* 
-	point p0, pi, pf;
-	p0 << 1000, 500, 800;
-	pi << 1500, 0, 800;
-	pf << 1000, -500, 800;
-	Vector3d rpy0, rpyf;
-	rpy0 << 140, 0, 0;
-	rpyf << 220, 0, 0;
-	seqJointVec jointangles;
-	cirtraj(jointangles, rpy0, rpyf, p0, pi, pf, 5, 5);
-
-	RT_QUEUE tarpos;					   
-	err = rt_queue_bind(&tarpos, TARPOS_QUEUE_NAME, TM_INFINITE);
-	if(err < 0){
-		rt_fprintf(stderr, "target position queue bind failed in motion.cpp:ptp() : %d", err);
-	}
-
-	for(size_t i=0; i<jointangles.size(); i++)
-	{
-		DriveVec ip = Joint2Drive(jointangles[i]);
-		incpos_t ipo;
-		for(int j=0; j<6; j++)
-		{
-			ipo.inc[j] = ip[j];
-		}
-		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
-		if(err < 0)
-		{
-			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
-			if(-ENOMEM == err){
-				rt_task_sleep(10000000);
-				i--;
-			}
-		}
-	}
- 
-	cirtraj(jointangles, rpyf, rpy0, pf, pi, p0, 5, 5);
-	for(size_t i=0; i<jointangles.size(); i++)
-	{
-		DriveVec ip = Joint2Drive(jointangles[i]);
-		incpos_t ipo;
-		for(int j=0; j<6; j++)
-		{
-			ipo.inc[j] = ip[j];
-		}
-		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
-		if(err < 0)
-		{
-			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
-			if(-ENOMEM == err){
-				rt_task_sleep(10000000);
-				i--;
-			}
-		}
-	}
-
- */
-/*
-	for(unsigned int i=0; i<jang.size(); i++)
-	{
-		incpos_t ip = jointangle2increment(jang[i]);	
-		err = rt_queue_write(&tarpos, &ip, sizeof(incpos_t), Q_NORMAL);
-		if(err < 0){
-			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
-			if(-ENOMEM == err){
-				rt_task_sleep(10000000);
-				i--;
-			}
-		}
-	}
-*/
-
-	// err = rt_queue_unbind(&tarpos);
-	// if(err < 0){
-	// 	rt_fprintf(stderr, "target position queue unbind failed in motion.cpp:PTP() : %d", err);
-	// }
-/* 
-	if(ptp(jang[jang.size()-1], ij0, TARPOS_QUEUE_NAME, 10, 10) < 0){
-		rt_printf("PTP function failed\n");
-	}
- */
-/* 
-	if(ptp(jp1, dabao1, TARPOS_QUEUE_NAME, 5, 5) < 0){
-		rt_printf("PTP function failed\n");
-	}
- */
 	rt_heap_unbind(&heap_desc);
 	rt_heap_unbind(&stat_heap);
 }

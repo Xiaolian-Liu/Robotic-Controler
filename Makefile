@@ -113,7 +113,7 @@ Objects/transform.o: teachview/kinematics/transform.cpp \
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 Objects/motion.o: teachview/kinematics/motion.cpp teachview/kinematics/motion.h \
  teachview/kinematics/trajectory.h teachview/kinematics/er20.h \
- teachview/kinematics/circle.h
+ teachview/kinematics/circle.h teachview/kinematics/transform.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o $@ $<
 
 Objects/trajectory.o: teachview/kinematics/trajectory.cpp \
