@@ -373,7 +373,7 @@ int arctraj(vecHTransform & T, Matrix4d pose0, Matrix4d posei, Matrix4d posef, i
 
 	Vector3d kb = R0 * k;
 	std::cout << kb << std::endl;
-	double ang = theta * 180 / PI;
+	// double ang = theta * 180 / PI;
 	Circle cir(p0, pi, pf);
 	double Sf = cir.arclen();
 

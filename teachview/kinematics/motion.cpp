@@ -130,150 +130,61 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int
 	}
     return 0;
 }
-/* 
-int ptp(const joinpos_t & p0, const joinpos_t & pf, vectori & vinc, int a, int v, int f )
-{
-	cout << "caculating the ptp function ......\n";
-	for(int i=0; i<6; i++)
-	{
-		if( (pf.joi[i]<minangle[i]) || (pf.joi[i]>maxangle[i]) )
-		{
-			cout << "err: the destination of joint " << i << " is out of range\n";
-			return -1;
-		}
-	}
-    
-	int ivmax = 0, iamax = 0;
-	double gapmaxv = 0, gapmaxa = 0;
-	for(int i =0; i<6; i++)
-	{
-		if(abs(pf.joi[i]-p0.joi[i])/maxvel[i] > gapmaxv)
-		{
-			gapmaxv = abs(pf.joi[i]-p0.joi[i])/maxvel[i];
-			ivmax = i;	//find which axis moves faster ralatively
-		}
-        if(abs(pf.joi[i]-p0.joi[i])/maxacc[i] > gapmaxa)
-		{
-			gapmaxa = abs(pf.joi[i]-p0.joi[i])/maxacc[i];
-			iamax = i;	//find which axis accerlerate faster ralatively
-		}
-	}
-	vectord namda = julipt(p0.joi[ivmax], 
-                           pf.joi[ivmax],
-    maxacc[iamax]*abs((pf.joi[ivmax]-p0.joi[ivmax])/(pf.joi[iamax]-p0.joi[iamax]))*a/100.0, 
-                           maxvel[ivmax]*v/100.0,
-                           f);
 
-    for(unsigned int i=0; i<namda.size(); i++)
-    {	
-		joinpos_t jp;
-        for(int j=0; j<6; j++)
-        {	
-            jp.joi[j] = p0.joi[j]+(pf.joi[j]-p0.joi[j])*namda[i];
-        }
-        vinc.push_back(jointangle2increment(jp));
-    }
-    return 0;
+int lin(seqJointVec & jangle, CartPose p0, CartPose pf, int a, int v, int f)
+{
+	jangle.clear();
+	vecHTransform T;
+	lintraj(T, p0, pf, a, v, f);
+	size_t N = T.size();
+	jangle.resize(N);
+	JointVec lastangle;
+	lastangle << 0, 0, 0, 0, 0, 0;
+	invkine(jangle[0], lastangle, p0);
+
+	for (size_t i = 1; i < N; i++)
+	{
+		invkine(jangle[i], jangle[i - 1], T[i]);
+	}
+	return 0;
 }
 
-
-int ptp(const incpos_t & inc0, const incpos_t & incf, vectori & vinc, int a, int v, int f)
+int arc(seqJointVec & jangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int v, int f)
 {
-    cout << "caculating the ptp function ......\n";
-    joinpos_t p0 = increment2jointangle(inc0);
-    joinpos_t pf = increment2jointangle(incf);
-	for(int i=0; i<6; i++)
-	{
-		if( (pf.joi[i]<minangle[i]) || (pf.joi[i]>maxangle[i]) )
-		{
-			cout << "err: the destination of joint " << i << " is out of range\n";
-			return -1;
-		}
-	}
-	int ivmax = 0, iamax = 0;
-	double gapmaxv = 0, gapmaxa = 0;
-	for(int i =0; i<6; i++)
-	{
-		if(abs(pf.joi[i]-p0.joi[i])/maxvel[i] > gapmaxv)
-		{
-			gapmaxv = abs(pf.joi[i]-p0.joi[i])/maxvel[i];
-			ivmax = i;	//find which axis moves faster ralatively
-		}
-        if(abs(pf.joi[i]-p0.joi[i])/maxacc[i] > gapmaxa)
-		{
-			gapmaxa = abs(pf.joi[i]-p0.joi[i])/maxacc[i];
-			iamax = i;	//find which axis accerlerate faster ralatively
-		}
-	}
-	vectord namda = julipt( p0.joi[ivmax], 
-                            pf.joi[ivmax], 
-    maxacc[iamax]*abs((pf.joi[ivmax]-p0.joi[ivmax])/(pf.joi[iamax]-p0.joi[iamax]))*a/100.0, 
-                            maxvel[ivmax]*v/100.0,
-                            f);
+	jangle.clear();
+	vecHTransform T;
+	arctraj(T, T0, Ti, Tf, a, v, f);
+	size_t N = T.size();
+	jangle.resize(N);
+	JointVec lastangle;
+	lastangle << 0, 0, 0, 0, 0, 0;
+	invkine(jangle[0], lastangle, T[0]);
 
-    for(unsigned int i=0; i<namda.size(); i++)
-    {	
-		joinpos_t jp;
-        for(int j=0; j<6; j++)
-        {	
-            jp.joi[j] = p0.joi[j]+(pf.joi[j]-p0.joi[j])*namda[i];
-        }
-        vinc.push_back(jointangle2increment(jp));
-    }
-    return 0;
+	for (size_t i = 1; i < N; i++)
+	{
+		invkine(jangle[i], jangle[i - 1], T[i]);
+	}
+	return 0;
 }
 
-int ptp( const joinpos_t & p0, const cartpos_t & cpf, vectori & vinc, int a, int v, int f )
+int cir(seqJointVec & jangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int v, int f)
 {
-    cout << "caculating the ptp function ......\n";
-    joinpos_t pf;
-    if(-1 == invkine(cpf, p0.joi, pf.joi))
-	{
-		cout << "inverse kinematics err\n";
-		return -1;
-	}
+	jangle.clear();
+	vecHTransform T;
+	circletraj(T, T0, Ti, Tf, a, v, f);
+	size_t N = T.size();
+	jangle.resize(N);
+	JointVec lastangle;
+	lastangle << 0, 0, 0, 0, 0, 0;
+	invkine(jangle[0], lastangle, T[0]);
 
-	for(int i=0; i<6; i++)
+	for (size_t i = 1; i < N; i++)
 	{
-		if( (pf.joi[i]<minangle[i]) || (pf.joi[i]>maxangle[i]) )
-		{
-			cout << "err: the destination of joint " << i << " is out of range\n";
-			return -1;
-		}
+		invkine(jangle[i], jangle[i - 1], T[i]);
 	}
-	int ivmax = 0, iamax = 0;
-	double gapmaxv = 0, gapmaxa = 0;
-	for(int i =0; i<6; i++)
-	{
-		if(abs(pf.joi[i]-p0.joi[i])/maxvel[i] > gapmaxv)
-		{
-			gapmaxv = abs(pf.joi[i]-p0.joi[i])/maxvel[i];
-			ivmax = i;	//find which axis moves faster ralatively
-		}
-        if(abs(pf.joi[i]-p0.joi[i])/maxacc[i] > gapmaxa)
-		{
-			gapmaxa = abs(pf.joi[i]-p0.joi[i])/maxacc[i];
-			iamax = i;	//find which axis accerlerate faster ralatively
-		}
-	}
-	vectord namda = julipt( p0.joi[ivmax], 
-                            pf.joi[ivmax], 
-    maxacc[iamax]*abs((pf.joi[ivmax]-p0.joi[ivmax])/(pf.joi[iamax]-p0.joi[iamax]))*a/100.0, 
-                            maxvel[ivmax]*v/100.0,
-                            f );
-
-    for(unsigned int i=0; i<namda.size(); i++)
-    {	
-		joinpos_t jp;
-        for(int j=0; j<6; j++)
-        {	
-            jp.joi[j] = p0.joi[j]+(pf.joi[j]-p0.joi[j])*namda[i];
-        }
-        vinc.push_back(jointangle2increment(jp));
-    }
-    return 0;
+	return 0;
 }
- */
+
 
 void PTP(void *cookie)
 {
@@ -286,14 +197,15 @@ void PTP(void *cookie)
 	rt_print_auto_init(1);
 	rt_printf("Satrt PTP......\n");
 
+
 	int err = rt_heap_bind(&heap_desc, DRIVE_DATA_HEAP_NAME, TM_INFINITE);
 	if(err < 0){
 		rt_printf("data heap bind fail in motion.cpp:PTP() : %d\n", err);
 	}
 	err = rt_heap_bind(&stat_heap, DRIVE_STATE_HEAP_NAME, TM_INFINITE);
-		if(err < 0){
-			rt_printf("state heap bind fail in motion.cpp:PTP() : %d\n", err);
-		}
+	if(err < 0){
+		rt_printf("state heap bind fail in motion.cpp:PTP() : %d\n", err);
+	}
 	
 	incpos_t ip0;
 
@@ -316,12 +228,12 @@ void PTP(void *cookie)
 			break;
 		}
 
-		rt_task_sleep(2000000000);
-
 		err = rt_heap_free(&stat_heap, stat_sharm);
 		if(err < 0){
 			rt_fprintf(stderr, "state heap free fail in motion.cpp:PTP() : %d", err);
 		}
+
+		rt_task_sleep(2000000000);
 	}
 	
 	err = rt_heap_alloc(&heap_desc, 0, TM_INFINITE, &data_sharm);
@@ -341,12 +253,160 @@ void PTP(void *cookie)
 	for(int i=0; i<6; i++){
 		rt_printf("ij0.joi[%d] = %f\n", i, ij0.joi[i]);
 	}
-	/* joinpos_t ij1 = {{0,0,0,0,90,0}};
-	if(ptp(ij0, ij1, TARPOS_QUEUE_NAME, 10, 10) < 0){
+
+
+	joinpos_t ijhome = {{0,0,0,0,-90,0}};
+	if(ptp(ij0, ijhome, TARPOS_QUEUE_NAME, 10, 10) < 0){
 		rt_printf("PTP function failed\n");
-	} */
-	// cartpos_t cp1;
-	// forkine(ij1.joi, &cp1);
+	}
+	joinpos_t jps;
+	cartpos_t cps;
+	cps.pe[0] = 1000; cps.pe[1] = 100; cps.pe[2] = 630;
+	cps.Rx0 = -180; cps.Ry0 = 0; cps.Rz0 = 0;
+	invkine(cps, ijhome.joi, jps.joi);
+
+	if(ptp(ijhome, jps, TARPOS_QUEUE_NAME, 10, 10) < 0){
+		rt_printf("PTP function failed\n");
+	}
+	
+	RT_QUEUE tarpos;					   
+	err = rt_queue_bind(&tarpos, TARPOS_QUEUE_NAME, TM_INFINITE);
+	if(err < 0){
+		rt_fprintf(stderr, "target position queue bind failed in motion.cpp:ptp() : %d", err);
+	}
+
+	CartPose ps,p0, pi, pf;
+	ps.pe << 1000, 100, cps.pe[2];
+	ps.rpy << -180, 0, 0;
+
+	p0.pe << 1000, 100, 590;
+	p0.rpy << -180, 0, 0;
+
+	pi.pe << 1100, 0, 590;
+	pi.rpy << -180, 0, 0;
+
+	pf.pe << 1000, -100, 590;
+	pf.rpy << -180, 0, 0;
+
+
+	seqJointVec angles;
+	lin(angles, ps, p0, 5, 5);
+	for(size_t i=0; i<angles.size(); i++)
+	{
+		DriveVec ip = Joint2Drive(angles[i]);
+		incpos_t ipo;
+		for(int j=0; j<6; j++)
+		{
+			ipo.inc[j] = ip[j];
+		}
+		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0)
+		{
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
+	}
+
+	lin(angles, p0, pi, 5, 5);
+	for(size_t i=0; i<angles.size(); i++)
+	{
+		DriveVec ip = Joint2Drive(angles[i]);
+		incpos_t ipo;
+		for(int j=0; j<6; j++)
+		{
+			ipo.inc[j] = ip[j];
+		}
+		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0)
+		{
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
+	}
+
+
+	lin(angles, pi, pf, 5, 5);
+	for(size_t i=0; i<angles.size(); i++)
+	{
+		DriveVec ip = Joint2Drive(angles[i]);
+		incpos_t ipo;
+		for(int j=0; j<6; j++)
+		{
+			ipo.inc[j] = ip[j];
+		}
+		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0)
+		{
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
+	}
+
+	lin(angles, pf, p0, 5, 5);
+	for(size_t i=0; i<angles.size(); i++)
+	{
+		DriveVec ip = Joint2Drive(angles[i]);
+		incpos_t ipo;
+		for(int j=0; j<6; j++)
+		{
+			ipo.inc[j] = ip[j];
+		}
+		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0)
+		{
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
+	}
+	while(run)
+	{
+		rt_task_sleep(1000000000);
+	}
+	lin(angles, p0, ps, 5, 5);
+	for(size_t i=0; i<angles.size(); i++)
+	{
+		DriveVec ip = Joint2Drive(angles[i]);
+		incpos_t ipo;
+		for(int j=0; j<6; j++)
+		{
+			ipo.inc[j] = ip[j];
+		}
+		err = rt_queue_write(&tarpos, &ipo, sizeof(incpos_t), Q_NORMAL);
+		if(err < 0)
+		{
+			rt_fprintf(stderr, "target position queue write failed in motion.cpp:PTP() : %d", err);
+			if(-ENOMEM == err){
+				rt_task_sleep(10000000);
+				i--;
+			}
+		}
+	}
+
+	err = rt_queue_unbind(&tarpos);
+	if(err < 0){
+		rt_fprintf(stderr, "target position queue unbind failed in motion.cpp:PTP() : %d", err);
+	}
+	
+	if(ptp(jps, ijhome, TARPOS_QUEUE_NAME, 10, 10) < 0){
+		rt_printf("PTP function failed\n");
+	}
+
+	if(ptp(ijhome, ij0, TARPOS_QUEUE_NAME, 10, 10) < 0){
+		rt_printf("PTP function failed\n");
+	}
+/*
 	cartpos_t cp1;
 	cp1.pe[0] = 1000; cp1.pe[1] = 500; cp1.pe[2] = 800;
 	cp1.Rx0 = 140; cp1.Ry0 = 0; cp1.Rz0 = 0;
@@ -355,7 +415,7 @@ void PTP(void *cookie)
 	if(ptp(ij0, jp1, TARPOS_QUEUE_NAME, 5, 5) < 0){
 		rt_printf("PTP function failed\n");
 	}
-/* 
+
 	cartpos_t cp2;
 	cp2.pe[0] = cp1.pe[0];
 	cp2.pe[1] = -1000;
@@ -366,7 +426,7 @@ void PTP(void *cookie)
 	vectorangle jang;
 	lintraj(jang, ij1, cp2, 20, 10);
 */
-
+/* 
 	point p0, pi, pf;
 	p0 << 1000, 500, 800;
 	pi << 1500, 0, 800;
@@ -422,7 +482,7 @@ void PTP(void *cookie)
 		}
 	}
 
-
+ */
 /*
 	for(unsigned int i=0; i<jang.size(); i++)
 	{
@@ -447,10 +507,11 @@ void PTP(void *cookie)
 		rt_printf("PTP function failed\n");
 	}
  */
+/* 
 	if(ptp(jp1, dabao1, TARPOS_QUEUE_NAME, 5, 5) < 0){
 		rt_printf("PTP function failed\n");
 	}
-
+ */
 	rt_heap_unbind(&heap_desc);
 	rt_heap_unbind(&stat_heap);
 }

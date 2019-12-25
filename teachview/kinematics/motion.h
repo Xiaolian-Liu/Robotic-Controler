@@ -30,3 +30,7 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int
 // int ptp(const incpos_t & inc0, const incpos_t & incf, int a, int v, int f = 500 );
 // int ptp(const joinpos_t & p0, const cartpos_t & cpf, int a, int v, int f = 500 );
 void PTP(void *cookie);
+
+int lin(seqJointVec & seqangle, CartPose p0, CartPose pf, int a, int v, int f = 500);
+int arc(seqJointVec & seqangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int v, int f = 500);
+int cir(seqJointVec & seqangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int v, int f = 500);
