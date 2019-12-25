@@ -39,6 +39,8 @@ public:
 	Matrix4d SE3();
 	Matrix3d SO3();
 	Vector3d Pc();
+	/* return the direction of the circle axises in world coordinates */
+	Vector3d axis();
 	double arclen();
 	double circumference();
 

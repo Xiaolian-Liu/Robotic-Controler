@@ -103,7 +103,7 @@ Circle::Circle(point start, point center, direction axis)
 
 Matrix4d Circle::SE3()
 {
-	Matrix4d se3;
+	Matrix4d se3 = Matrix4d::Identity();
 	se3.block(0, 0, 3, 1) = X;
 	se3.block(0, 1, 3, 1) = Y;
 	se3.block(0, 2, 3, 1) = Z;
@@ -125,7 +125,10 @@ Vector3d Circle::Pc()
 {
 	return o;
 }
-
+Vector3d Circle::axis()
+{
+	return Z;
+}
 double Circle::arclen()
 {
 	return arc;

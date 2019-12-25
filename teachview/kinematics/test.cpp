@@ -104,9 +104,9 @@ int main(int argc, char *argv[])
 	p0.pe << 1000, 100, 597.5;
 	pi.pe << 1100, 0, 597.5;
 	pf.pe << 1000, -100, 597.5;
-	p0.rpy << -140, 0, 0;
+	p0.rpy << -220, 0, 0;
 	pi.rpy << -180, 0, 0;
-	pf.rpy << -220, 0, 0;
+	pf.rpy << -140, 0, 0;
 	
 
 	lin(angles1, p0, pf, 20, 20, 100);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 	
 	Rf = rpy2ro(pf.rpy, 'd');
 	Vector3d kb, k;
-	kb << 0, 0, -1;
+	kb << 0, 0, 1;
 	k = Rf.inverse()*kb;
 	Matrix3d Rf0 = angvec2r(PI, k);
 	R0 = Rf * Rf0;

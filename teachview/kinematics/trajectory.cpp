@@ -377,6 +377,12 @@ int arctraj(vecHTransform & T, Matrix4d pose0, Matrix4d posei, Matrix4d posef, i
 	Circle cir(p0, pi, pf);
 	double Sf = cir.arclen();
 
+	if (abs(kb.dot(cir.axis())+1) < 10*DBL_EPSILON)
+	{
+		/* for avoid the 180бу turn around in the opposite direction */
+		k = -k;
+	}
+
 	vectord s, sd, sdd;
 
 	if(Sf/LMAXVEL > theta/RMAXVEL)
