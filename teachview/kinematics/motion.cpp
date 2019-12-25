@@ -502,7 +502,7 @@ void PTP(void *cookie)
 		rt_fprintf(stderr, "target position queue unbind failed in motion.cpp:PTP() : %d", err);
 	}
 	
-	if(ptp(jps, ijhome, TARPOS_QUEUE_NAME, 30, 15) < 0){
+	if(ptp(jps, ijhome, TARPOS_QUEUE_NAME, 10, 15) < 0){
 		rt_printf("PTP function failed\n");
 	}
 

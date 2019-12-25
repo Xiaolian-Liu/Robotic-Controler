@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <float.h>
 #include "circle.h"
 #include "transform.h"
 
@@ -379,7 +380,7 @@ int arctraj(vecHTransform & T, Matrix4d pose0, Matrix4d posei, Matrix4d posef, i
 
 	if (abs(kb.dot(cir.axis())+1) < 10*DBL_EPSILON)
 	{
-		/* for avoid the 180¡ã turn around in the opposite direction */
+		/* for avoid the 180ï¿½ï¿½ turn around in the opposite direction */
 		k = -k;
 	}
 
