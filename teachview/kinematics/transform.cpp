@@ -2,11 +2,12 @@
 #include <cmath>
 #include <cfloat>
 #include <iostream>
+#include <cstdlib>
 using std::cout;
 using std::endl;
 
 #ifndef pi
-#define pi	3.1415926545
+#define pi	3.14159265358979323846
 #endif
 
 static inline double degree2rad(double deg){ return deg*pi/180; }
@@ -22,6 +23,48 @@ Vector3d tr2eul(Matrix4d Trans, char mode)
 	Matrix3d R;
 	R = tr2ro(Trans);
 	return ro2eul(R, mode);
+}
+
+Vector3d tr2eul(Matrix3d R, string opt)
+{
+	if (!isrot(R))
+	{
+		cout << "error----tr2eul:isrot:badarg, expecting an 3X3 orthogonal matrix\n";
+	}
+	R.col(0).normalize();
+	R.col(1).normalize();
+	R.col(2).normalize();
+	Vector3d eul;  // eul = [phi theta psi]
+	if (abs(R(0, 2)) < DBL_EPSILON && abs(R(1, 2)) < DBL_EPSILON)
+	{
+		//singularity
+		eul(0) = 0;
+		double sp = 0;
+		double cp = 1;
+		eul(1) = atan2(cp*R(0, 2)+sp*R(1, 2),  R(2, 2));
+		eul(2) = atan2(-sp*R(0, 0)+cp* R(1, 0),  -sp*R(0, 1)+cp*R(1, 1));
+	}
+	else
+	{
+		//non singularity
+		if (string::npos != opt.find("flip"))
+		{
+			eul(0) = atan2(-R(1, 2), -R(0, 2));
+		}
+		else
+		{
+			eul(0) = atan2(R(1, 2), R(0, 2));
+		}
+		double sp = sin(eul(0));
+		double cp = cos(eul(0));
+		eul(1) = atan2(cp*R(0, 2)+sp*R(1, 2),   R(2, 2));
+		eul(2) = atan2(-sp*R(0, 0)+cp*R(1, 0),  -sp*R(0, 1)+cp* R(1, 1));
+	}
+	if (string::npos != opt.find("deg"))
+	{
+		eul = eul * 180 / pi;
+	}
+	return eul;
 }
 
 Vector3d ro2eul(Matrix3d Rotation, char mode)
@@ -135,23 +178,43 @@ Matrix3d rpy2ro(Vector3d rpy, char mode)
 
 Matrix3d skew(Vector3d k)
 {
-	k.normalize();
 	Matrix3d S;
 	S << 0,		-k(2),	k(1),
 		k(2),	0,		-k(0),
 		-k(1),	k(0),	0;
 	return S;
 }
+Matrix2d skew(double k)
+{
+	Matrix2d S;
+	S << 0, -k,
+		 k,  0;
+	return S;
+}
 
 Matrix3d angvec2r(double theta, Vector3d k, char mode)
 {
+	Matrix3d R;
+	if (k.norm() < 10 * DBL_EPSILON)
+	{
+		if (abs(theta) > 0)
+		{
+			cout << "angvec2r:badarg, norm of direction is zero\n";
+			exit(EXIT_FAILURE);
+		}
+		else
+		{
+			R = Matrix3d::Identity();
+			return R;
+		}
+	}
 	if ('d' == mode)
 	{
 		theta = theta * pi / 180;
 	}
 	k.normalize();
 	Matrix3d sk = skew(k);
-	Matrix3d R = Matrix3d::Identity() + sin(theta)*sk + (1 - cos(theta))*sk*sk;
+	R = Matrix3d::Identity() + sin(theta)*sk + (1 - cos(theta))*sk*sk;
 	return R;
 }
 
@@ -225,10 +288,18 @@ Matrix3d rotx(double theta, char mode)
 	{
 		theta = theta * pi / 180;
 	}
+	double ct = cos(theta);
+	double st = sin(theta);
+
+	if (abs(ct) < DBL_EPSILON)
+		ct = 0;
+	if (abs(st) < DBL_EPSILON)
+		st = 0;
+
 	Matrix3d R;
-	R <<	1,	0,				0,
-			0,	cos(theta),		-sin(theta),
-			0,	sin(theta),		cos(theta);
+	R <<	1,	0,	0,
+			0,	ct,	-st,
+			0,	st,	ct;
 	return R;
 }
 
@@ -238,10 +309,18 @@ Matrix3d roty(double theta, char mode)
 	{
 		theta = theta * pi / 180;
 	}
+	double ct = cos(theta);
+	double st = sin(theta);
+
+	if (abs(ct) < DBL_EPSILON)
+		ct = 0;
+	if (abs(st) < DBL_EPSILON)
+		st = 0;
+
 	Matrix3d R;
-	R << cos(theta),  0,	sin(theta),
-		    0,		  1,		0,
-		 -sin(theta), 0,	cos(theta);
+	R <<	ct,		0,		st,
+			0,		1,		0,
+			-st,	0,		ct;
 
 	return R;
 }
@@ -252,10 +331,18 @@ Matrix3d rotz(double theta, char mode)
 	{
 		theta = theta * pi / 180;
 	}
+	double ct = cos(theta);
+	double st = sin(theta);
+
+	if (abs(ct) < DBL_EPSILON)
+		ct = 0;
+	if (abs(st) < DBL_EPSILON)
+		st = 0;
+
 	Matrix3d R;
-	R << cos(theta),	-sin(theta),	0,
-		 sin(theta),	cos(theta),		0,
-		     0,				0,			1;
+	R <<	ct,	-st,	0,
+			st,	ct,		0,
+			0,	0,		1;
 	return R;
 }
 
@@ -271,4 +358,56 @@ Matrix3d oa2r(Vector3d o, Vector3d a)
 	R.col(1) = o;
 	R.col(2) = a;
 	return R;
+}
+
+bool isrot(Matrix3d R)
+{
+	/* 100*DBL_EPSILON to lower the precision of caculation */
+	if (abs(R.determinant() - 1) < 100*DBL_EPSILON)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+inline bool ishomog(Matrix4d T)
+{
+	int ret = false;
+	Matrix3d R;
+	R = T.block(0, 0, 3, 3);
+	if (abs(R.determinant() - 1) < 10*DBL_EPSILON && abs(T.block(3,0,1,3).norm()) < 10*DBL_EPSILON &&
+		abs(T(3,3)-1) < 10*DBL_EPSILON)
+	{
+		ret = true;
+	}
+	return ret;
+}
+
+Vector3d transl(Matrix4d T)
+{
+	if (ishomog(T))
+	{
+		return T.block(0, 3, 3, 1);
+	}
+	else
+	{
+		cout << "transl:badarg, the matrix argument is not homogo\n";
+		exit(EXIT_FAILURE);
+	}
+}
+
+Matrix4d transl(Vector3d p, Matrix3d R)
+{
+	if (!isrot(R))
+	{
+		cout << "transl:badarg, the 3X3 matrix is not a Rotation\n";
+		//exit(EXIT_FAILURE);
+	}
+	Matrix4d T = Matrix4d::Identity();
+	T.block(0, 0, 3, 3) = R;
+	T.block(0, 3, 3, 1) = p;
+	return T;
 }

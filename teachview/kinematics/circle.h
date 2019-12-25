@@ -40,10 +40,12 @@ public:
 	Matrix3d SO3();
 	Vector3d Pc();
 	double arclen();
+	double circumference();
 
 	/* return the coordinate position of the point in the arc, 
 	the input is the arc length between the point we caculate and the begin point */
 	Vector3d coordposi(double len); 
+	
 
 
 private:

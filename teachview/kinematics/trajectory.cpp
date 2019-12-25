@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include "circle.h"
+#include "transform.h"
 
 vectord julipt(double x0, double xf, double a, double v, int f)
 {
@@ -209,6 +210,7 @@ int lintraj(vectorpos & p, cartpos_t p0, cartpos_t pf , int a, int v, int f)
     }
 	return 0;
 }
+
 int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f)
 {
     std::ofstream angleout;
@@ -238,6 +240,47 @@ int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f)
 		angleout << std::endl;
     }
     return 0;
+}
+
+int lintraj(vecHTransform & T, CartPose pose0, CartPose posef, int a, int v, int f)
+{
+
+	Vector3d p0 = pose0.pe;
+	Vector3d pf = posef.pe;
+	Vector3d p = pf-p0;
+    double l = p.norm();
+
+	Vector3d rpy0 = pose0.rpy;
+	Vector3d rpyf = posef.rpy;
+	Vector3d rpy = rpyf - rpy0;
+	double r = abs(rpy.maxCoeff());
+
+    vectord s,sd,sdd;
+	if (l / LMAXVEL > r / RMAXVEL)
+	{
+		double acc = a*LMAXACC/100.0;
+		double vel = v*LMAXVEL/100.0;
+		ulspb(s,sd,sdd, 0, l, acc, vel, f);
+	}
+	else
+	{
+		double acc = a*RMAXACC/100.0;
+		double vel = v*RMAXVEL/100.0;
+		ulspb(s,sd,sdd, 0, r, acc, vel, f);
+	}
+	
+    int N = s.size();
+    T.resize(N);
+	for (int i = 0; i < N; i++)
+	{
+		Vector3d rpyi = rpy0 + s[i] * (rpyf - rpy0);
+		Matrix3d R = rpy2ro(rpyi,'d');
+
+		Vector3d pi = p0 + s[i] * (pf - p0);
+
+		T[i] = transl(pi, R);
+	}
+	return 0;
 }
 
 int cirtraj(vectord & s, vecposition & p, point p0, point pi, point pf, int a, int v, int f)
@@ -312,5 +355,121 @@ int cirtraj(seqJointVec & seqangle, Vector3d rpy0, Vector3d rpyf,point p0, point
 		angleout << std::endl;
 	}
 	angleout.close();
+	return 0;
+}
+
+int arctraj(vecHTransform & T, Matrix4d pose0, Matrix4d posei, Matrix4d posef, int a, int v, int f)
+{
+	Vector3d p0 = transl(pose0);
+	Vector3d pi = transl(posei);
+	Vector3d pf = transl(posef);
+	Matrix3d R0 = pose0.block(0,0,3,3);
+	Matrix3d Rf = posef.block(0,0,3,3);
+	Matrix3d Rf0 = R0.inverse()*Rf;
+	
+	Vector3d k;
+	double theta;
+	tr2angvec(theta, k, Rf0);
+
+	Vector3d kb = R0 * k;
+	std::cout << kb << std::endl;
+	double ang = theta * 180 / PI;
+	Circle cir(p0, pi, pf);
+	double Sf = cir.arclen();
+
+	vectord s, sd, sdd;
+
+	if(Sf/LMAXVEL > theta/RMAXVEL)
+	{
+		double acc = a * LMAXACC / 100.0;
+		double vel = v * LMAXVEL / 100.0;
+		ulspb(s, sd, sdd, 0, Sf, acc, vel, f);
+	}
+	else
+	{
+		double acc = a * RMAXACC / 100.0;
+		double vel = v * RMAXVEL / 100.0;
+		ulspb(s,sd,sdd,0,theta,acc,vel,f);
+	}
+
+	int N = s.size();
+	vecposition p(N);
+	Matrix3d Rc;
+	Rc = cir.SO3();
+	Vector3d c;
+	c = cir.Pc();
+	for (int i = 0; i < N; i++)
+	{
+		p[i] = c + Rc * cir.coordposi(s[i]*Sf);
+	}
+
+	vecOrientation R(N);
+	for (int i = 0; i < N; i++)
+	{
+		R[i] = R0 * angvec2r(s[i] * theta, k);
+	}
+
+	T.resize(N);
+	for (int i = 0; i < N; i++)
+	{
+		T[i] = transl(p[i], R[i]);
+	}
+	return 0;
+}
+
+int circletraj(vecHTransform & T, Matrix4d pose0, Matrix4d posei, Matrix4d posef, int a, int v, int f)
+{
+	Vector3d p0 = transl(pose0);
+	Vector3d pi = transl(posei);
+	Vector3d pf = transl(posef);
+	Matrix3d R0 = pose0.block(0,0,3,3);
+	Matrix3d Rf = posef.block(0,0,3,3);
+	Matrix3d Rf0 = R0.inverse()*Rf;
+	
+	Vector3d k;
+	double theta;
+	tr2angvec(theta, k, Rf0);
+
+	Circle cir(p0, pi, pf);
+	double Sf = cir.circumference();
+
+	vectord s, sd, sdd;
+
+	if(Sf/LMAXVEL > theta/RMAXVEL)
+	{
+		double acc = a * LMAXACC / 100.0;
+		double vel = v * LMAXVEL / 100.0;
+		ulspb(s, sd, sdd, 0, Sf, acc, vel, f);
+	}
+	else
+	{
+		double acc = a * RMAXACC / 100.0;
+		double vel = v * RMAXVEL / 100.0;
+		ulspb(s,sd,sdd,0,theta,acc,vel,f);
+	}
+
+	int N = s.size();
+	vecposition p(N);
+	Matrix3d Rc;
+	Rc = cir.SO3();
+	Vector3d c;
+	c = cir.Pc();
+	for (int i = 0; i < N; i++)
+	{
+		p[i] = c + Rc * cir.coordposi(s[i]*Sf);
+	}
+
+	vecOrientation R(N);
+	for (int i = 0; i < N; i++)
+	{
+		R[i] = R0 * angvec2r(s[i] * theta, k);
+	}
+
+	T.resize(N);
+	for (int i = 0; i < N; i++)
+	{
+		T[i] = transl(p[i], R[i]);
+		//std::cout << T[i] << std::endl << std::endl;
+	}
 	return 0;
 }

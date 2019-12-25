@@ -14,7 +14,7 @@ const double a2 = ER20_a2;
 const double a3 = ER20_a3;
 const double d3 = ER20_d3;
 const double d4 = ER20_d4;
-const double d6 = ER20_d6;
+const double d6 = ER20_d6 + ER20_pe + ER20_pen;
 
 const double a[6] =
 {
@@ -670,46 +670,181 @@ int invkine(JointVec & jp, JointVec j0, CartPose p)
 	}
 }
 
-void jointangle_show(const double jointangle[6])
+int invkine(JointVec & jp, JointVec j0, Matrix4d T)
 {
-	cout << " The jointangles are: ";
+	int i, j;
+	Matrix3d R70, R76, Re;
+	Vector3d ae, Pw, Pe;
+	double lasttheta[6];
+	//jointangle2theta(lastjointangle, lasttheta);
+	DHsysVec theta0 = Joint2DH(j0);
 	for (int i = 0; i < 6; i++)
 	{
-		cout.width(10);
-		cout.setf(ios_base::right, ios_base::adjustfield);
-		cout.setf(ios_base::fixed, ios_base::floatfield);
-		cout.precision(3);
-		cout << jointangle[i] << '\t';
+		lasttheta[i] = theta0(i);
 	}
-	std::cout << "\n";
-}
+	
+	R70 = T.block(0,0,3,3);
 
-void cartpose_show(const cartpos_t &pos)
-{
-	cout << " The Carte poses are: ";
-	for (int i = 0; i < 3; i++)
+	R76 << 1, 0, 0,
+		0, 1, 0,
+		0, 0, 1;
+
+	Re = R70 * R76.transpose();
+
+	Pe = transl(T);
+	ae = Re.col(2);
+	Pw = Pe - d6 * ae;
+	double pwx = Pw(0);
+	double pwy = Pw(1);
+	double pwz = Pw(2);
+
+#if ER20CTEST
+	std::cout << R70 << std::endl;
+	std::cout << Re << std::endl;
+	std::cout << Pe << std::endl;
+	std::cout << ae << std::endl;
+	std::cout << Pw << std::endl;
+#endif
+
+	static double l34 = sqrt(a3*a3 + d4 * d4);
+	static double a22 = a2 * a2;
+	static double l342 = a3 * a3 + d4 * d4;
+	static double da2l34 = 2 * a2*l34;
+	static double deta34 = atan((double)d4 / a3);
+	double lxy[2] = { sqrt(pwx*pwx + pwy * pwy - d3 * d3), -sqrt(pwx*pwx + pwy * pwy - d3 * d3) };
+	double alpha[2] = { atan2(d3,lxy[0]), atan2(d3,lxy[1]) };
+	double theta1[2] = { lasttheta[1], lasttheta[1] };
+	if ((abs(pwx) > 1e-6) || (abs(pwy) > 1e-6))  // pwx, pwy != 0
 	{
-		cout.width(10);
-		cout.setf(ios_base::right, ios_base::adjustfield);
-		cout.setf(ios_base::fixed, ios_base::floatfield);
-		cout.precision(3);
-		cout << pos.pe[i] << '\t';
+		for (i = 0; i < 2; i++)
+			theta1[i] = atan2(pwy, pwx) + alpha[i];
 	}
-	cout.width(10);
-	cout.setf(ios_base::right, ios_base::adjustfield);
-	cout.setf(ios_base::fixed, ios_base::floatfield);
-	cout.precision(3);
-	cout << pos.Rx0 << '\t';
-	cout.width(10);
-	cout.setf(ios_base::right, ios_base::adjustfield);
-	cout.setf(ios_base::fixed, ios_base::floatfield);
-	cout.precision(3);
-	cout << pos.Ry0 << '\t';
-	cout.width(10);
-	cout.setf(ios_base::right, ios_base::adjustfield);
-	cout.setf(ios_base::fixed, ios_base::floatfield);
-	cout.precision(3);
-	cout << pos.Rz0 << '\n';
+
+	double cosbeta3[2];
+	for (i = 0; i < 2; i++)
+		cosbeta3[i] = ((lxy[0] - a1)*(lxy[0] - a1) + (pwz - d1)*(pwz - d1) - a22 - l342) / da2l34;
+
+	double sinbeta3[4] =
+	{
+		sqrt(1 - cosbeta3[0] * cosbeta3[0]),
+		sqrt(1 - cosbeta3[1] * cosbeta3[1]),
+		-sqrt(1 - cosbeta3[0] * cosbeta3[0]),
+		-sqrt(1 - cosbeta3[1] * cosbeta3[1])
+	};
+	double beta3[4], theta3[4];
+	/*	beta3[0] = atan2(sinbeta3[0], cosbeta3[0]);
+		beta3[1] = atan2(sinbeta3[1], cosbeta3[1]);
+		beta3[2] = atan2(sinbeta3[2], cosbeta3[0]);
+		beta3[3] = atan2(sinbeta3[3], cosbeta3[1]);
+	*/	for (i = 0; i < 4; i++)
+	{
+		beta3[i] = atan2(sinbeta3[i], cosbeta3[i % 2]);
+		theta3[i] = beta3[i] + deta34;
+	}
+
+
+
+	double costheta2[4], sintheta2[4], theta2[4], theta23[4];
+	for (i = 0; i < 4; i++)
+	{
+		costheta2[i] = (((lxy[i % 2] - a1)*(a2 + l34 * cosbeta3[i % 2]) + (pwz - d1)*l34*sinbeta3[i]) / (a22 + da2l34 * cosbeta3[i % 2] + l342));
+		sintheta2[i] = (((-lxy[i % 2] + a1)*l34*sinbeta3[i] + (pwz - d1)*(a2 + l34 * cosbeta3[i % 2])) / (a22 + 2 * a2*l34*cosbeta3[i % 2] + l342));
+		theta2[i] = atan2(sintheta2[i], costheta2[i]);
+		theta23[i] = theta2[i] + theta3[i];
+	}
+
+
+	Matrix3d R30[4];
+	Matrix3d R63[4];
+	for (i = 0; i < 4; i++)
+	{
+		R30[i] << cos(theta1[i % 2])*cos(theta23[i]), sin(theta1[i % 2]), cos(theta1[i % 2])*sin(theta23[i]),
+			sin(theta1[i % 2])*cos(theta23[i]), -cos(theta1[i % 2]), sin(theta1[i % 2])*sin(theta23[i]),
+			sin(theta23[i]), 0, -cos(theta23[i]);
+
+		R63[i] = (R30[i].transpose())*Re;
+	}
+
+	double theta4[8], theta5[8], theta6[8], axy[4];
+	for (i = 0; i < 4; i++)
+		axy[i] = sqrt((R63[i](0, 2))*(R63[i](0, 2)) + (R63[i](1, 2))*(R63[i](1, 2)));
+
+	for (i = 0; i < 4; i++)
+	{
+		theta5[i] = atan2(axy[i], R63[i](2, 2));
+		if (abs(axy[i]) < 1e-4)  //axy[i] == 0
+		{
+			theta4[i] = lasttheta[3];
+			theta6[i] = atan2(R63[i](1, 0), R63[i](0, 0)) - theta4[i];
+		}
+		else
+		{
+			theta4[i] = atan2(R63[i](1, 2), R63[i](0, 2));
+			theta6[i] = atan2(R63[i](2, 1), -R63[i](2, 0));
+		}
+	}
+
+	for (i = 4; i < 8; i++)
+	{
+		theta5[i] = atan2(-axy[i - 4], R63[i - 4](2, 2));
+		if (abs(axy[i - 4]) < 1e-4)
+		{
+			theta4[i] = lasttheta[3];
+			theta6[i] = atan2(R63[i - 4](1, 0), R63[i - 4](0, 0)) - theta4[i];
+		}
+		else
+		{
+			theta4[i] = atan2(-R63[i - 4](1, 2), -R63[i - 4](0, 2));
+			theta6[i] = atan2(-R63[i - 4](2, 1), R63[i - 4](2, 0));
+		}
+	}
+
+	double *res[8];
+	double restheta[8][6];
+	for (i = 0; i < 8; i++)
+	{
+		res[i] = new double[6]{ theta1[i % 2],theta2[i % 4],theta3[i % 4],theta4[i],theta5[i],theta6[i] };
+		for (j = 0; j < 6; j++)
+			restheta[i][j] = res[i][j];
+		delete[] res[i];
+	}
+
+	int min_i = 8;
+	double min_en = 2 * PI * 2 * PI;
+	int isaccept;
+	for (i = 0; i < 8; i++)
+	{
+		isaccept = 1;
+		for (j = 0; j < 6; j++)
+		{
+			if ((restheta[i][j] < MIN_theta[j]) || (restheta[i][j] > MAX_theta[j]))
+				isaccept = 0;
+			if (!isaccept)
+				break;
+		}
+		if (!isaccept) continue;
+		double en_i = 0;
+		for (j = 0; j < 6; j++)
+			en_i += ER20_Weig[j] * (restheta[i][j] - lasttheta[j])*(restheta[i][j] - lasttheta[j]);
+
+		if (min_en > en_i)
+		{
+			min_i = i;
+			min_en = en_i;
+		}
+	}
+	if (8 == min_i)
+	{
+		cout << "inverse kinematics err: No such appropriate joint angle" << endl;
+		return -1;
+	}
+	else
+	{
+		double jointangle[6];
+		theta2jointangle(restheta[min_i], jointangle);
+		jp << jointangle[0], jointangle[1], jointangle[2], jointangle[3], jointangle[4], jointangle[5];
+		return 0;
+	}
 }
 
 

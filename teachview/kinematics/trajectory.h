@@ -22,6 +22,8 @@ typedef vector<cartpos_t> vectorpos;
 typedef vector<joinpos_t> vectorangle;
 typedef vector<Vector3d> vecposition;
 typedef vector<Vector3d> vecrpyangles;
+typedef vector<Matrix3d> vecOrientation;
+typedef vector<Matrix4d> vecHTransform;
 
 
 /*****************************************************************
@@ -52,6 +54,7 @@ int ulspb(vectord & s, vectord & sd, vectord & sdd, double s0, double sf, double
 int lintraj(vectorpos & p, cartpos_t p0, cartpos_t pf , int a, int v, int f = 500);
 
 int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f = 500);
+int lintraj(vecHTransform & Transforms, CartPose pose0, CartPose posef, int a, int v, int f = 500);
 
 /************************************************************************************
  * the circle trajectory function 
@@ -61,5 +64,8 @@ int lintraj(vectorangle & j, joinpos_t j0, cartpos_t pf , int a, int v, int f = 
 
 int cirtraj(vectord & S, vecposition & p, point p0, point pi, point pf, int a, int v, int f = 500);
 int cirtraj(seqJointVec & seqangle, Vector3d rpy0, Vector3d rpyf, point p0, point pi, point pf, int a, int v, int f = 500);
+int arctraj(vecHTransform & seqTransform, Matrix4d pose0, Matrix4d posei, Matrix4d posef, int a, int v, int f = 500);
+int circletraj(vecHTransform & seqTransform, Matrix4d pose0, Matrix4d posei, Matrix4d posef, int a, int v, int f = 500);
+
 
 #endif

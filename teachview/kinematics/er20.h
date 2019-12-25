@@ -18,7 +18,11 @@
 
 #include <stdint.h>		/* where int32_t is included */
 #include <Eigen/Dense>
+//#include <Eigen/StdVector> //need include it, when using STL Containers,
+// if use -std=C++17, or C++11 no need!
+// http://eigen.tuxfamily.org/dox-devel/group__TopicStlContainers.html
 #include <vector>
+#include <map>
 /*
 #ifndef int32_t
 #define int32_t int
@@ -51,7 +55,8 @@ using std::vector;
 #define ER20_d4  760.39
 #define ER20_d5  0
 #define ER20_d6  125
-
+#define ER20_pe	 206
+#define ER20_pen 70
 /* the offset between the D-H system and the Jointangle */
 #define offset1 0
 #define offset2 PI_2
@@ -130,6 +135,10 @@ using std::vector;
 #define LMAXVEL     1000
 //the max cart acceleration mm/s^2
 #define LMAXACC     2000
+//the max rotation speed in cart space, uinits: degree/s
+#define RMAXVEL		180
+//the max rotation acceleration in cart space, uinits: degree/s^2
+#define RMAXACC		540
 
 //The Var
 #ifndef cartpos_t
@@ -157,7 +166,9 @@ typedef struct
 #endif
 
 typedef Matrix<double, 6, 1> JointVec;
+//EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(JointVec)
 typedef vector<JointVec> seqJointVec; /* the sequence of JointVec*/
+
 
 #ifndef incpos_t
 typedef struct
@@ -227,6 +238,7 @@ int forkine(CartPose & pose, JointVec angles);
  * **********************************************************************/
 int invkine(const cartpos_t &pos, const double lastjointangle[6], double jointangle[6]);
 int invkine(JointVec & angles, JointVec lastangles, CartPose pose);
+int invkine(JointVec & angles, JointVec lastangles, Matrix4d Transform);
 //seqJointVec invkine(JointVec j0, CartPose pf);
 
 void jointangle_show(const double jointangle[6]);

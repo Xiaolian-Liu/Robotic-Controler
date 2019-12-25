@@ -5,7 +5,7 @@ using namespace std;
 using namespace Eigen;
 
 #ifndef pi
-#define pi 3.1415926545
+#define pi 3.14159265358979323846
 #endif
 
 Circle::Circle(point start, point center, double radius, direction axis)
@@ -130,7 +130,10 @@ double Circle::arclen()
 {
 	return arc;
 }
-
+double Circle::circumference()
+{
+	return 2 * pi * r;
+}
 Vector3d Circle::coordposi(double len)
 {
 	Vector3d p;
