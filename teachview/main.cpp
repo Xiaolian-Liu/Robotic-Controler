@@ -2,7 +2,8 @@
 #include <QApplication>
 #include <Threads/ReadPipeThread.h>
 #include <QObject>
-#include "kinematics/trajectory.h"
+#include <trajectory.h>
+
 typedef std::vector<double> vectord;
 
 

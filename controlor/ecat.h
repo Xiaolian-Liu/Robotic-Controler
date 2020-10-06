@@ -2,7 +2,7 @@
 #define ECATDRIVE_H
 #include <stdint.h> /*where int32_t is included  */
 
-#define FREQUENCY 500
+#define FREQUENCY 1000
 #define NSEC_PER_SEC (1000000000L)
 #define PERIOD_NS (NSEC_PER_SEC / FREQUENCY)
 #define CoolDrive      0x00000748, 0x00000000
@@ -41,6 +41,6 @@ void rt_check_domain_state(ec_domain_t *domain)
 void rt_check_master_state(ec_master_t *master);
 void endsignal(int sig); */
 
-void ecat_task(void *arg);
+void * ecat_task(void *arg);
 
 #endif

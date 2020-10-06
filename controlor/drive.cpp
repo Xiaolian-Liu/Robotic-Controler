@@ -2,14 +2,24 @@
 #include <unistd.h> /* while sleep() and uslepp() is include */
 #include <math.h>
 #include <iostream>
+
+
+#ifdef XENOMAI
+
 #include <native/task.h>
 #include <native/heap.h>
 #include <rtdk.h>
+
+#endif
+
+
 #include <commu.h>
 #include "drive.h"
 
 using std::cout;
 using std::endl;
+
+#ifdef XENOMAI
 
 RT_HEAP stat_heap;
 void * stat_block = NULL;
@@ -17,6 +27,7 @@ void * stat_block = NULL;
 RT_HEAP data_heap;
 void * data_block = NULL;
 // driverdata_t * data;
+
 
 int bind_heap(void)
 {
@@ -79,6 +90,8 @@ int data_free(void)
         rt_fprintf(stderr, "data heap free fail in EcatDrive.cpp : %d", err);
     return err;
 }
+
+
 
 void faultreset(void)
 {
@@ -240,7 +253,7 @@ void driveinit(void * cookie)
     enable();
     rt_printf("init done!\n");
 }
-
+#endif
 /*  void test(int32_t a, int32_t v, int32_t x)    
     In this place, double is first considered, because 
     when we caculate, when we multiply, when we divide,

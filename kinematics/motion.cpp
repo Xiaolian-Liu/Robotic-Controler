@@ -1,8 +1,14 @@
+#ifdef XENOMAI
 
 #include <rtdk.h>
 #include <native/queue.h>
 #include <native/heap.h>
 #include <native/task.h>
+
+#endif
+
+#include <sys/msg.h>
+#include <stdio.h>
 #include <commu.h>
 #include "motion.h"
 #include "circle.h"
@@ -51,16 +57,16 @@ const double maxacc[6] =
 	MAXACC6
 };
 
-
+/* 
 
 int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int a, int v, int f)
 {
-	rt_printf("caculating the ptp function ......\n");
+    printf("caculating the ptp function ......\n");
 	for(int i=0; i<6; i++)
 	{
 		if( (pf.joi[i]<minangle[i]) || (pf.joi[i]>maxangle[i]) )
 		{
-			rt_printf("err: the destination of joint %d is out of range\n",i);
+            printf("err: the destination of joint %d is out of range\n",i);
 			return -1;
 		}
 	}
@@ -83,11 +89,6 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int
 	}
 	double acc = maxacc[iamax]*abs((pf.joi[ivmax]-p0.joi[ivmax])/(pf.joi[iamax]-p0.joi[iamax]))*a/100.0;
 	double vel = maxvel[ivmax]*v/100.0;
-	rt_printf("p0: %f\n", p0.joi[ivmax]);
-	rt_printf("pf: %f\n", pf.joi[ivmax]);
-	rt_printf("pf: %f\n", acc);
-	rt_printf("pf: %f\n", vel);
-	rt_printf("pf: %d\n", f);
 
 	vectord namda = julipt(p0.joi[ivmax], 
                            pf.joi[ivmax],
@@ -102,11 +103,11 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int
 	incpos_t inchome = jointangle2increment(pf);
 	for(int j=0; j<6; j++)
 	{
-		rt_printf("home[%d]: %d\n",j, inchome.inc[j]);
+		printf("home[%d]: %d\n",j, inchome.inc[j]);
 	}
     for(unsigned int i=0; i<namda.size(); i++)
     {	
-		// rt_printf("%f\n", namda[i]);
+		// printf("%f\n", namda[i]);
 		joinpos_t jp;
         for(int j=0; j<6; j++)
         {	
@@ -130,6 +131,48 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, const char * queue_name, int
 		rt_fprintf(stderr, "target position queue unbind failed in motion.cpp:ptp() : %d", err);
 	}
     return 0;
+}
+ */
+
+int ptp(seqJointVec & jangle, const JointVec & p0, const JointVec & pf, int a, int v, int f)
+{
+	jangle.clear();
+	for(int i=0; i<6; i++)
+	{
+		if( (pf[i]<minangle[i]) || (pf[i]>maxangle[i]) )
+		{
+            printf("err: the destination of joint %d is out of range\n",i);
+			return -1;
+		}
+	}
+
+	int ivmax = 0, iamax = 0;
+	double gapmaxv = 0, gapmaxa = 0;
+	for(int i =0; i<6; i++)
+	{
+		if(abs(pf[i]-p0[i])/maxvel[i] > gapmaxv)
+		{
+			gapmaxv = abs(pf[i]-p0[i])/maxvel[i];
+			ivmax = i;	//find which axis moves faster ralatively
+		}
+        if(abs(pf[i]-p0[i])/maxacc[i] > gapmaxa)
+		{
+			gapmaxa = abs(pf[i]-p0[i])/maxacc[i];
+			iamax = i;	//find which axis accerlerate faster ralatively
+		}
+	}
+	double acc = maxacc[iamax]*abs((pf[ivmax]-p0[ivmax])/(pf[iamax]-p0[iamax]))*a/100.0;
+	double vel = maxvel[ivmax]*v/100.0;
+
+	vectord s, sd, sdd;
+	ulspb(s, sd, sdd, p0[ivmax], pf[ivmax], acc, vel, f);
+	size_t N = s.size();
+	jangle.resize(N);
+	for (size_t i = 1; i < N; i++)
+	{
+		jangle[i] = p0 + s[i]*(pf - p0);
+	}
+	return 0;
 }
 
 int lin(seqJointVec & jangle, CartPose p0, CartPose pf, int a, int v, int f)
@@ -186,7 +229,7 @@ int cir(seqJointVec & jangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int 
 	return 0;
 }
 
-
+/* 
 void PTP(void *cookie)
 {
 	RT_HEAP heap_desc;
@@ -196,16 +239,16 @@ void PTP(void *cookie)
 	driverdata_t * data;
 	driverstate_t * state;
 	rt_print_auto_init(1);
-	rt_printf("Satrt PTP......\n");
+	printf("Satrt PTP......\n");
 
 
 	int err = rt_heap_bind(&heap_desc, DRIVE_DATA_HEAP_NAME, TM_INFINITE);
 	if(err < 0){
-		rt_printf("data heap bind fail in motion.cpp:PTP() : %d\n", err);
+		printf("data heap bind fail in motion.cpp:PTP() : %d\n", err);
 	}
 	err = rt_heap_bind(&stat_heap, DRIVE_STATE_HEAP_NAME, TM_INFINITE);
 	if(err < 0){
-		rt_printf("state heap bind fail in motion.cpp:PTP() : %d\n", err);
+		printf("state heap bind fail in motion.cpp:PTP() : %d\n", err);
 	}
 	
 	incpos_t ip0;
@@ -225,7 +268,7 @@ void PTP(void *cookie)
 			if(err < 0){
 				rt_fprintf(stderr, "state heap free fail in motion.cpp:PTP() : %d", err);
 			}
-			rt_printf("go to break\n");
+			printf("go to break\n");
 			break;
 		}
 
@@ -244,7 +287,7 @@ void PTP(void *cookie)
 	data = (driverdata_t *) data_sharm;
 	for(int i=0; i<6; i++){
 		ip0.inc[i] = data->ActualPosition[i];
-		rt_printf("ip0.inc[%d] = %d\n", i, ip0.inc[i]);
+		printf("ip0.inc[%d] = %d\n", i, ip0.inc[i]);
 	}
 	err = rt_heap_free(&heap_desc, data_sharm);
 	if(err < 0){
@@ -252,13 +295,13 @@ void PTP(void *cookie)
 	}
 	joinpos_t ij0 = increment2jointangle(ip0);
 	for(int i=0; i<6; i++){
-		rt_printf("ij0.joi[%d] = %f\n", i, ij0.joi[i]);
+		printf("ij0.joi[%d] = %f\n", i, ij0.joi[i]);
 	}
 
 
 	joinpos_t ijhome = {{0,0,0,0,-90,0}};
 	if(ptp(ij0, ijhome, TARPOS_QUEUE_NAME, 30, 15) < 0){
-		rt_printf("PTP function failed\n");
+		printf("PTP function failed\n");
 	}
 	joinpos_t jps;
 	cartpos_t cps;
@@ -267,7 +310,7 @@ void PTP(void *cookie)
 	invkine(cps, ijhome.joi, jps.joi);
 
 	if(ptp(ijhome, jps, TARPOS_QUEUE_NAME, 30, 15) < 0){
-		rt_printf("PTP function failed\n");
+		printf("PTP function failed\n");
 	}
 	
 	RT_QUEUE tarpos;					   
@@ -291,7 +334,7 @@ void PTP(void *cookie)
 
 
 	seqJointVec angles;
-/* 
+
 	lin(angles, ps, p0, 5, 5);
 	for(size_t i=0; i<angles.size(); i++)
 	{
@@ -394,7 +437,7 @@ void PTP(void *cookie)
 	}
  */
 
-
+/*
 	p0.rpy << -220, 0, 0;
 	pi.rpy << -180, 0, 0;
 	pf.rpy << -140, 0, 0;
@@ -503,13 +546,14 @@ void PTP(void *cookie)
 	}
 	
 	if(ptp(jps, ijhome, TARPOS_QUEUE_NAME, 10, 15) < 0){
-		rt_printf("PTP function failed\n");
+		printf("PTP function failed\n");
 	}
 
 	if(ptp(ijhome, dabao1, TARPOS_QUEUE_NAME, 30, 15) < 0){
-		rt_printf("PTP function failed\n");
+		printf("PTP function failed\n");
 	}
 
 	rt_heap_unbind(&heap_desc);
 	rt_heap_unbind(&stat_heap);
 }
+ */

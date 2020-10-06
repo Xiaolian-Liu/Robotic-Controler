@@ -1,6 +1,6 @@
 #include "ReadPipeThread.h"
 #include <fstream>
-#include <kinematics/er20.h>
+#include <er20.h>
 
 QVector<double> tarposition[6];
 QVector<double> runtime;
