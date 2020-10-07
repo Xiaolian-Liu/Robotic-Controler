@@ -38,6 +38,7 @@
 #include <sys/mman.h>
 
 #include "ecat.h"
+#include "ThreadTest.hpp"
 using namespace std;
 
 static int latency_target_fd;
@@ -78,6 +79,16 @@ static void set_latency_target(void)
 
 int main()
 {
+    ThreadTest testThread;
+    testThread.start();
+    while(run)
+    {
+        std::cout << "the main thread\n";
+        sleep(2);
+    }
+    testThread.quit();
+    testThread.wait();
+    return 0;
     struct sched_param param;
     pthread_attr_t attr;
     pthread_t thread;
