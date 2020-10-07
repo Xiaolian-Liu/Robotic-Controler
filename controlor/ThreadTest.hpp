@@ -6,6 +6,7 @@
 class ThreadTest : public Thread
 {
 	private:
+		virtual void run();
 
 	public:
 

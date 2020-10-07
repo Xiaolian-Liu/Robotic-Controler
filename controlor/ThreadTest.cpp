@@ -1,6 +1,10 @@
 #include "ThreadTest.hpp"  
+#include <iostream>
+#include <unistd.h>
+using std::cout;
+using std::endl;
 
-ThreadTest::ThreadTest()
+ThreadTest::ThreadTest() :Thread("test")
 {
 
 }
@@ -8,4 +12,13 @@ ThreadTest::ThreadTest()
 ThreadTest::~ThreadTest()
 {
 
+}
+
+void ThreadTest::run() 
+{
+    while(isRun)
+    {
+        cout << "TestRunFunc\n";
+        sleep(1);
+    }
 }

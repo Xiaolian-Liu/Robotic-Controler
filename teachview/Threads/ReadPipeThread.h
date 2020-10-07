@@ -11,6 +11,7 @@
 #include <QVector>
 #include <QMutex>
 #include <QFile>
+#include <QThread>
 
 #define NUMSL   6
 typedef struct

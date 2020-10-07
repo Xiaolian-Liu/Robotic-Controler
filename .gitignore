@@ -37,3 +37,6 @@ teachview/kinematics/.vs/
 *.log
 *.pdb
 *.ipdb
+bin/controlor
+bin/kinematics
+bin/teachview
