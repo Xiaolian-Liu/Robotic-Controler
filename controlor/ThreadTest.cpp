@@ -18,7 +18,7 @@ void ThreadTest::run()
 {
     while(isRun)
     {
-        cout << "TestRunFunc\n";
+        cout << pthread_self() << ": TestRunFunc\n";
         sleep(1);
     }
 }

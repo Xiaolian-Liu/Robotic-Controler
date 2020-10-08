@@ -80,15 +80,23 @@ static void set_latency_target(void)
 int main()
 {
     ThreadTest testThread;
+    ThreadTest testThread2;
     testThread.start();
+    testThread2.start();
+
     while(run)
     {
         std::cout << "the main thread\n";
         sleep(2);
     }
     testThread.quit();
+    testThread2.quit();
+
     testThread.wait();
+    testThread2.wait();
+
     return 0;
+
     struct sched_param param;
     pthread_attr_t attr;
     pthread_t thread;
