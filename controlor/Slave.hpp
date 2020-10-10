@@ -57,5 +57,6 @@ class Slave
 		uint32_t ProductCode() const;
 		unsigned int nEntries() const;
 		const ec_pdo_entry_info_t *pdoEntry() const;
+		const ec_sync_info_t *syncManger() const;
 };
 #endif // __SLAVE_H__

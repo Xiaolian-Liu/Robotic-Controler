@@ -6,15 +6,55 @@ using std::cout;
 using std::endl;
 using std::string;
 
-EthercatMaster::EthercatMaster(unsigned int index)
+EthercatMaster::EthercatMaster(uint32_t cycleTime, unsigned int index)
 {
-    master = ecrt_request_master(index);
-    cout << "request master: " << index << endl;
+    this->cycleTime = cycleTime;
+    this->masterIndex = index;
+    nSlaves = 0;
+    allSlavesSate = INIT;
+    linkUp = false;
+    master = nullptr;
+    domain = nullptr;
+    domainPtr = nullptr;
+    domainRegist = nullptr;
+
+    offControlWord = nullptr;
+    offTargetPosition = nullptr;
+    offTargetVelocity = nullptr;
+    offTargetTorque = nullptr;
+    offTargetModeOP = nullptr;
+    offDummyByte1 = nullptr;
+    TouchProbeFunc = nullptr;
+    offSatesWord = nullptr;
+    offActualPosition = nullptr;
+    offActualVelocity = nullptr;
+    offActualTorque = nullptr;
+    offActualModeOP = nullptr;
+    offBummyByte2 = nullptr;
+    offFollowError = nullptr;
+    offDigitalInputs = nullptr;
+    offTouchProbeSatte = nullptr;
+    offTouchProbePos1 = nullptr;
+}
+
+EthercatMaster::~EthercatMaster()
+{
+    clear();
+}
+
+int EthercatMaster::init() 
+{
+    clear();
+    int initRes = 0;
+
+    master = ecrt_request_master(masterIndex);
+    cout << "request master: " << masterIndex << endl;
     if(!master)
     {
-        cerr << "request master: " << index << "failed, EtherCAT Master construct failed" << endl;
-        return;
+        cerr << "request master: " << masterIndex << " failed, EtherCAT Master construct failed" << endl;
+        return -1;
     }
+
     ecrt_master_state(master, &state);
     nSlaves = state.slaves_responding;
     allSlavesSate = ALState(state.al_states);
@@ -31,7 +71,9 @@ EthercatMaster::EthercatMaster(unsigned int index)
         {
             int err = ecrt_master_get_sync_manager(master, i, j, syncs + j);
             if(err){
-                cerr << "Master construct failed, can't get the sync managers" << endl;
+                cerr << "Master init failed, can't get the sync managers" << endl;
+                delete[] syncs;
+                return -1;
             }
             nPdos += syncs[j].n_pdos;
         }
@@ -45,9 +87,12 @@ EthercatMaster::EthercatMaster(unsigned int index)
             {
                 int err = ecrt_master_get_pdo(master, i, j, pdosIndex, pdos);
                 if(err){
-                    cerr << "Master construct failed, can't get the pdos" << endl;
+                    cerr << "Master init failed, can't get the pdos" << endl;
+                    delete[] syncs;
+                    delete[] pdos;
+                    return -1;
                 }
-                nEntries += pdos[index].n_entries;
+                nEntries += pdos[pdosIndex].n_entries;
                 pdosIndex += syncs[j].n_pdos;
             }
 
@@ -62,9 +107,13 @@ EthercatMaster::EthercatMaster(unsigned int index)
             {
                 int err = ecrt_master_get_pdo_entry(master, i, j, pdosIndex, entrysIndex, entries);
                 if(err){
-                    cerr << "Master construct failed, can't get the pdo entries" << endl;
+                    cerr << "Master finit failed, can't get the pdo entries" << endl;
+                    delete[] syncs;
+                    delete[] pdos;
+                    delete[] entries;
+                    return -1;
                 }
-                entrysIndex += pdos[index].n_entries;
+                entrysIndex += pdos[pdosIndex].n_entries;
                 pdosIndex += syncs[j].n_pdos;
             }
         }
@@ -83,11 +132,10 @@ EthercatMaster::EthercatMaster(unsigned int index)
         slavei.setPdos(pdos);
         slavei.setSyncManger(syncs);
         slave.push_back(slavei);
-    }
 
-    int totalEntries = 0;
-    for (int i = 0; i < nSlaves; i++){
-        totalEntries += slave[i].nEntries();
+        delete[] syncs;
+        delete[] pdos;
+        delete[] entries;
     }
 
 
@@ -110,13 +158,22 @@ EthercatMaster::EthercatMaster(unsigned int index)
     offTouchProbeSatte = new unsigned int[nSlaves];
     offTouchProbePos1 = new unsigned int[nSlaves];
 
-    domainRegist = new ec_pdo_entry_reg_t[nSlaves * totalEntries];
+    int totalEntries = 0;
+    for (int i = 0; i < nSlaves; i++){
+        totalEntries += slave[i].nEntries();
+    }
+
+    domainRegist = new ec_pdo_entry_reg_t[totalEntries+1];
     for (int i = 0; i < nSlaves; i++)
     {
-        for (int j = 0; j < slave[i].nEntries(); j++)
+        int n = slave[i].nEntries();
+        for (int j = 0; j < n; j++)
         {
             unsigned int *offset;
-            switch (slave[i].pdoEntry()[j].index)
+            uint16_t index = slave[i].pdoEntry()[j].index;
+            uint8_t subIndex = slave[i].pdoEntry()[j].subindex;
+
+            switch (index)
             {
             case 0x6040:
                 offset = offControlWord + i;
@@ -173,14 +230,152 @@ EthercatMaster::EthercatMaster(unsigned int index)
                 offset = offTouchProbePos1 + i;
                 break;
             default:
+                offset = &offdata;
                 break;
             }
+
+            domainRegist[n * i + j] = {
+                slave[i].Alias(),
+                slave[i].Position(),
+                slave[i].VenderId(),
+                slave[i].ProductCode(),
+                index, subIndex, offset};
+
         }
     }
+    domainRegist[totalEntries] = {};
+
+    domain = ecrt_master_create_domain(master);
+    if(!domain){
+        cerr << "Master construct failed, can't creat domain" << endl;
+        initRes = -1;
+        goto init_end;
+    }
+
+    for (int i = 0; i < nSlaves; i++){
+        slaveConfig.push_back(nullptr);
+    }
+
+    for (int i = 0; i < nSlaves; i++)
+    {
+        if(!(slaveConfig[i] = ecrt_master_slave_config(
+            master,
+            slave[i].Alias(),
+            slave[i].Position(),
+            slave[i].VenderId(),
+            slave[i].ProductCode()))){
+            cerr << "Master init failed, can't get slave: " << i << "configuration" << endl;
+            initRes = -1;
+            goto init_end;
+        }
+
+        cout << "Configuring Slave" << i << " PDOs...\n";
+        if(ecrt_slave_config_pdos(slaveConfig[i], EC_END, slave[i].syncManger())){
+            cerr << "Master init failed, fail to configure Slave " << i << "PDOS" << endl;
+            initRes = -1;
+            goto init_end;
+        }
+        cout << "configureing Slave " << i << "PDOs is completed!\n";
+    }
+
+    if(ecrt_domain_reg_pdo_entry_list(domain, domainRegist)){
+        cerr << "PDO entries registration filed! \n";
+        initRes = -1;
+        goto init_end;
+    }
+    else
+    {
+        cout << "PDO entry registration succeed!\n";
+    }
+
+    for (int i = 0; i < nSlaves; i++){
+        ecrt_slave_config_dc(slaveConfig[i], 0x0300, cycleTime, cycleTime / 2, 0, 0);
+    }
+
+init_end:
+    if(-1 == initRes){
+        clear();
+    }
+    return 0;
 }
 
-EthercatMaster::~EthercatMaster()
+void EthercatMaster::setApplicationTime(uint64_t appTime) 
 {
-    ecrt_release_master(master);
+    ecrt_master_application_time(master, appTime);
 }
 
+int EthercatMaster::active() 
+{
+    cout << "Activating master...\n";
+    if (ecrt_master_activate(master)){
+		return -1;
+    }
+
+    if(!(domainPtr = ecrt_domain_data(domain))){
+        return -1;
+    }
+
+    cout << "active done! can start the cyclic function." << endl;
+}
+
+
+
+
+void EthercatMaster::clear() 
+{
+    slave.erase(slave.begin(), slave.end());
+    if(!master){
+        ecrt_release_master(master);
+    }
+    master = nullptr;
+
+    free(domain);
+    domain = nullptr;
+
+    for (int i = 0; i < slaveConfig.size(); i++)
+    {
+        free(slaveConfig[i]);
+        slaveConfig[i] = nullptr;
+    }
+    slaveConfig.erase(slaveConfig.begin(), slaveConfig.end());
+
+    delete[] domainRegist;
+    domainRegist = nullptr;
+
+    delete[] offControlWord;
+    delete[] offTargetPosition;
+    delete[] offTargetVelocity;
+    delete[] offTargetTorque;
+    delete[] offTargetModeOP;
+    delete[] offDummyByte1;
+    delete[] TouchProbeFunc;
+    delete[] offSatesWord;
+    delete[] offActualPosition;
+    delete[] offActualVelocity;
+    delete[] offActualTorque;
+    delete[] offActualModeOP;
+    delete[] offBummyByte2;
+    delete[] offFollowError;
+    delete[] offDigitalInputs;
+    delete[] offTouchProbeSatte;
+    delete[] offTouchProbePos1;
+
+    offControlWord = nullptr;
+    offTargetPosition = nullptr;
+    offTargetVelocity = nullptr;
+    offTargetTorque = nullptr;
+    offTargetModeOP = nullptr;
+    offDummyByte1 = nullptr;
+    TouchProbeFunc = nullptr;
+    offSatesWord = nullptr;
+    offActualPosition = nullptr;
+    offActualVelocity = nullptr;
+    offActualTorque = nullptr;
+    offActualModeOP = nullptr;
+    offBummyByte2 = nullptr;
+    offFollowError = nullptr;
+    offDigitalInputs = nullptr;
+    offTouchProbeSatte = nullptr;
+    offTouchProbePos1 = nullptr;
+
+}

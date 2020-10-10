@@ -39,6 +39,8 @@
 
 #include "ecat.h"
 #include "ThreadTest.hpp"
+#include "Controller.hpp"
+#include "Time.hpp"
 using namespace std;
 
 static int latency_target_fd;
@@ -79,23 +81,11 @@ static void set_latency_target(void)
 
 int main()
 {
-    ThreadTest testThread;
-    ThreadTest testThread2;
-    testThread.start();
-    testThread2.start();
+//     ThreadTest testThread;
+//     ThreadTest testThread2;
+//     testThread.start();
+//     testThread2.start();
 
-    while(run)
-    {
-        std::cout << "the main thread\n";
-        sleep(2);
-    }
-    testThread.quit();
-    testThread2.quit();
-
-    testThread.wait();
-    testThread2.wait();
-
-    return 0;
 
     struct sched_param param;
     pthread_attr_t attr;
@@ -113,6 +103,44 @@ int main()
 
     set_latency_target();
 
+    Controller control(200);
+    control.start();
+    while (run)
+    {
+        std::cout << "the main thread\n";
+        sleep(2);
+    }
+    // testThread.quit();
+    // testThread2.quit();
+    control.quit();
+    control.wait();
+    // testThread.wait();
+    // testThread2.wait();
+
+    // cout << -3/2 << endl;
+    // cout << -3%2 << endl;
+    // cout << -1/2 << endl;
+    // cout << -1%2 << endl;
+    // cout << -2/2 <<endl;
+    // cout << -2%2 <<endl;
+    // cout << sizeof(long long) << endl;
+    // Time t1(100, 600000000);
+    // cout << "t1: " << t1 << endl;
+    // Time t2(50, 500000000);
+    // cout << "t2: " << t2 << endl;
+    // Time t3 = t1 + t2;
+    // cout << "t3: " << t3 << endl;
+    // t3 = t1 - t2;
+    // cout << "t3: " << t3 << endl;
+    // t1 += t2;
+    // cout << "t1: " << t1 << endl;
+    // t1 -= t2;
+    // cout << "t1: " << t1 << endl;
+    // t3 = t1;
+    // cout << "t3: " << t3 << endl;
+    
+    return 0;
+    
     ret = pthread_attr_init(&attr);
     if(ret)
     {

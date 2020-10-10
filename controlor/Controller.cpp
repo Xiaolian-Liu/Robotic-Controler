@@ -22,32 +22,38 @@ Controller::~Controller()
 }
 void Controller::run() 
 {
-    // if(-1 == master.init()){
-    //     cout << "controller init master failed" << endl;
-    //     exit();
-    // }
+    if(-1 == master.init()){
+        cout << "controller init master failed" << endl;
+        exit();
+    }
     int counter = 0;
     Time wakeupTime, time;
 
 #ifdef MEASURE_TIMING
-	Time startTime, endTime, lastStartTime;
+    Time startTime, endTime, lastStartTime;
 	uint32_t period_ns = 0, exec_ns = 0, latency_ns = 0,
              latency_min_ns = 0, latency_max_ns = 0,
              period_min_ns = 0, period_max_ns = 0,
              exec_min_ns = 0, exec_max_ns = 0;
 #endif // MEASURE_TIMING
 
-    clock_gettime(CLOCK_MONOTONIC, (timespec *)&wakeupTime);
+    clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(isRun)
     {
-        wakeupTime += cycleTime;
-        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, (timespec *)&wakeupTime, NULL);
+        wakeupTime.addNanoSec(cycleTime);
+
+        // cout << "wakeupTime:" << wakeupTime << endl;
+        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeupTime, NULL);
         // master.setApplicationTime(wakeupTime.totalNanoSec());
 
 #ifdef MEASURE_TIMING
-        clock_gettime(CLOCK_MONOTONIC, (timespec *)&startTime);
-        latency_ns = (wakeupTime - startTime).totalNanoSec();
-        exec_ns = (lastStartTime - endTime).totalNanoSec();
+        clock_gettime(CLOCK_MONOTONIC, &startTime);
+        // cout << "statrTime:" << startTime << endl;
+        latency_ns = Time::diffNanoSec(startTime, wakeupTime);
+
+        // latency_ns = (wakeupTime - startTime).totalNanoSec();
+        period_ns = (startTime - lastStartTime).totalNanoSec();
+        exec_ns = (endTime - lastStartTime).totalNanoSec();
         lastStartTime = startTime;
 
         if (latency_ns > latency_max_ns) {

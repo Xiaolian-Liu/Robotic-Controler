@@ -8,6 +8,8 @@ using std::vector;
 class EthercatMaster  
 {
 	private:
+		unsigned int masterIndex;
+		uint32_t cycleTime;
 		int nSlaves;
 		vector<Slave> slave;
 		ALState allSlavesSate;
@@ -16,7 +18,8 @@ class EthercatMaster
 		ec_master_state_t state;
 		ec_domain_t *domain;
 		ec_domain_state_t domainState;
-		ec_slave_config_t **slaveConfig;
+		vector<ec_slave_config_t *> slaveConfig;
+
 		uint8_t *domainPtr;
 		ec_pdo_entry_reg_t *domainRegist;
 
@@ -39,10 +42,15 @@ class EthercatMaster
 		unsigned int *offTouchProbeSatte;
 		unsigned int *offTouchProbePos1;
 
+		unsigned int offdata;
+
+		void clear();
 
 	public:
-		EthercatMaster(unsigned int index = 0);
+		EthercatMaster(uint32_t cycleTime, unsigned int index = 0);
 		~EthercatMaster();
-
+		int init();
+		void setApplicationTime(uint64_t appTime);
+		int active();
 };
 #endif // __ETHERCATMASTER_H__

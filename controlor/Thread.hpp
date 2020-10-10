@@ -13,19 +13,18 @@ private:
 	struct sched_param param;
 	int priority;
 	static void *threadFunc(void *arg);
-	void exit();
 
 protected:
 	// int m_iThreadStatus;
 	// void * m_vpParameter;
 	virtual void run() = 0;
 	bool isRun;
+	void exit();
 
 public:
 	Thread();
 	Thread(char *threadName);
-	Thread(char *threadName, int priority, bool detach);
-	// Thread(void *arg);
+	Thread(char *threadName, int priority);
 	virtual ~Thread();
 	bool start();
 	// static void *ThreadCall(void *vpParameter);
@@ -35,7 +34,9 @@ public:
 	void quit();
 	void terminate();
 	void wait();
-	int getPriority();
+	void setPriority(int priority);		//used in realtime thread
+	int getPriority() const;
+	void setDetached(bool detach);
 	// int getThreadStatus();
 };
 #endif // __THREAD_H__

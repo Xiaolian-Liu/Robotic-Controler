@@ -32,7 +32,7 @@ Thread::Thread(char *threadName)
     // m_vpParameter = NULL;
 }
 
-Thread::Thread(char *threadName, int priority, bool detach) 
+Thread::Thread(char *threadName, int priority) 
 {
     threadId = 0;
     strncpy(name, threadName, 24);
@@ -68,12 +68,6 @@ Thread::Thread(char *threadName, int priority, bool detach)
     if(ret)
         cerr << name << ":" << "pthread setinheritsched failed\n";
     
-    if(detach)
-    {
-        ret = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-        if(ret)
-            cerr << name << ":" << "pthread setdetachedstate failed" << endl;
-    }
 }
 
 Thread::~Thread()
@@ -137,7 +131,39 @@ void Thread::wait()
         cerr << name << ":" << "can't join with thread" << endl;
 }
 
-int Thread::getPriority() 
+void Thread::setPriority(int priority) 
+{
+    int maxPriority = sched_get_priority_max(SCHED_FIFO);
+    int minPriority = sched_get_priority_min(SCHED_FIFO);
+    if(priority > maxPriority)
+        this->priority = maxPriority;
+    if(priority > minPriority)
+        this->priority = minPriority;
+        
+    param.__sched_priority = this->priority;
+    int ret = pthread_attr_setschedparam(&attr, &param);
+    if(ret)
+        cerr << name << ":" << "pthread setschedparam failed\n";
+}
+
+int Thread::getPriority() const
 {
     return priority;
+}
+
+void Thread::setDetached(bool detach) 
+{
+    if(detach){
+        int ret = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+        if(ret){
+            cerr << name << ":" << "pthread setdetachedstate failed" << endl;
+        }
+
+    }else
+    {
+        int ret = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+        if(ret){
+            cerr << name << ":" << "pthread setdetachedstate failed" << endl;
+        }
+    }
 }

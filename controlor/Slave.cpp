@@ -114,3 +114,8 @@ const ec_pdo_entry_info_t* Slave::pdoEntry() const
 {
     return this->pdoEntries;
 }
+
+const ec_sync_info_t* Slave::syncManger() const
+{
+    return this->syncMangers;
+}
