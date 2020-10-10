@@ -1,5 +1,9 @@
 #include "Slave.hpp"  
 #include <string.h>
+#include <iostream>
+using std::dec;
+using std::endl;
+using std::hex;
 
 Slave::Slave(const string &name,
              uint16_t alias,
@@ -22,6 +26,27 @@ Slave::Slave(const string &name,
     pdoEntries = new ec_pdo_entry_info_t[nPdoEntries];
     pdos = new ec_pdo_info_t[nPdos];
     syncMangers = new ec_sync_info_t[nSyncMangers + 1];
+}
+
+Slave::Slave(const Slave &s) //must need, because destruct error!
+{
+    this->name = s.name;
+    this->alias = s.alias;
+    this->position = s.position;
+    this->vendorId = s.vendorId;
+    this->productCode = s.productCode;
+    this->alState = s.alState;
+    this->nPdoEntries = s.nPdoEntries;
+    this->nPdos = s.nPdos;
+    this->nSyncMangers = s.nSyncMangers;
+
+    pdoEntries = new ec_pdo_entry_info_t[nPdoEntries];
+    pdos = new ec_pdo_info_t[nPdos];
+    syncMangers = new ec_sync_info_t[nSyncMangers + 1];
+
+    setPdoEntries(s.pdoEntries);
+    setPdos(s.pdos);
+    setSyncManger(s.syncMangers);
 }
 
 Slave::~Slave()
@@ -118,4 +143,34 @@ const ec_pdo_entry_info_t* Slave::pdoEntry() const
 const ec_sync_info_t* Slave::syncManger() const
 {
     return this->syncMangers;
+}
+
+void Slave::printEntries(std::ostream &os) 
+{
+    
+}
+
+std::ostream& operator<<(std::ostream &os, const Slave &s) 
+{
+    os << "name:\t\t\"" << s.name << "\"" << endl
+       << "vender id:\t\t" << s.vendorId << endl
+       << "product code:\t\t" << s.productCode << endl
+       << "pdo entries:" << endl;
+    for (int i = 0; i < s.nPdoEntries; i++)
+    {
+        os << "0x" << hex << s.pdoEntries[i].index << ",\t" << s.pdoEntries[i].subindex << ",\t" << dec << s.pdoEntries[i].bit_length << endl;
+    }
+
+    os << "pdos:" << endl;
+    for (int i = 0; i < s.nPdos; i++)
+    {
+        os << "0x" << hex << s.pdos[i].index << ",\t" << dec << s.pdos[i].n_entries << endl;
+    }
+
+    os << "sync mangers:" << endl;
+    for (int i = 0; i < s.nSyncMangers; i++)
+    {
+        os << i << "\t" << s.syncMangers[i].dir << "\t" <<  s.syncMangers[i].n_pdos << "\t" << s.syncMangers[i].watchdog_mode << endl;
+    }
+    return os;
 }

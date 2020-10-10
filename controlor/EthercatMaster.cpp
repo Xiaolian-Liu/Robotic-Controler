@@ -65,9 +65,10 @@ int EthercatMaster::init()
         ec_slave_info_t slaveInfo;
         ecrt_master_get_slave(master, i, &slaveInfo);
 
-        ec_sync_info_t *syncs = new ec_sync_info_t[slaveInfo.sync_count];
-        int nPdos = 0;
-        for (int j = 0; j < slaveInfo.sync_count; j++)
+        int sync_Count = slaveInfo.sync_count;
+        ec_sync_info_t *syncs = new ec_sync_info_t[sync_Count];
+        int totalPdos = 0;
+        for (int j = 0; j < sync_Count; j++)
         {
             int err = ecrt_master_get_sync_manager(master, i, j, syncs + j);
             if(err){
@@ -75,46 +76,51 @@ int EthercatMaster::init()
                 delete[] syncs;
                 return -1;
             }
-            nPdos += syncs[j].n_pdos;
+            totalPdos += syncs[j].n_pdos;
         }
 
-        ec_pdo_info_t *pdos = new ec_pdo_info_t[nPdos];
-        int pdosIndex = 0;
-        int nEntries = 0;
-        for (int j = 0; j < slaveInfo.sync_count; j++)
+        ec_pdo_info_t *pdos = new ec_pdo_info_t[totalPdos];
+        int totalEntries = 0;
+        int pdoIndex = 0;
+        for (int j = 0; j < sync_Count; j++)
         {
-            if(syncs[j].n_pdos > 0)
+            int n_Pdos = syncs[j].n_pdos;
+            if (n_Pdos > 0)
             {
-                int err = ecrt_master_get_pdo(master, i, j, pdosIndex, pdos);
+                
+                int err = ecrt_master_get_pdo(master, i, j, 0, pdos + pdoIndex);
                 if(err){
                     cerr << "Master init failed, can't get the pdos" << endl;
                     delete[] syncs;
                     delete[] pdos;
                     return -1;
                 }
-                nEntries += pdos[pdosIndex].n_entries;
-                pdosIndex += syncs[j].n_pdos;
+                totalEntries += pdos[pdoIndex].n_entries;
+                pdoIndex++;
             }
-
         }
 
-        ec_pdo_entry_info_t *entries = new ec_pdo_entry_info_t[nEntries];
-        pdosIndex = 0;
-        int entrysIndex = 0;
-        for (int j = 0; j < slaveInfo.sync_count; j++)
+        ec_pdo_entry_info_t *entries = new ec_pdo_entry_info_t[totalEntries];
+        int entriesOff = 0;
+        for (int j = 0; j < sync_Count; j++)
         {
-            if(syncs[j].n_pdos > 0)
+            int n_Pdos = syncs[j].n_pdos;
+            if(n_Pdos > 0)
             {
-                int err = ecrt_master_get_pdo_entry(master, i, j, pdosIndex, entrysIndex, entries);
-                if(err){
-                    cerr << "Master finit failed, can't get the pdo entries" << endl;
-                    delete[] syncs;
-                    delete[] pdos;
-                    delete[] entries;
-                    return -1;
+                int n_Entries = pdos[pdoIndex].n_entries;
+                for (int entrysIndex = 0; entrysIndex < n_Entries; entrysIndex++)
+                {
+                    int err = ecrt_master_get_pdo_entry(master, i, j, 0, entrysIndex, entries + entriesOff + entrysIndex);
+                    if(err){
+                        cerr << "Master finit failed, can't get the pdo entries" << endl;
+                        delete[] syncs;
+                        delete[] pdos;
+                        delete[] entries;
+                        return -1;
+
+                    }
                 }
-                entrysIndex += pdos[pdosIndex].n_entries;
-                pdosIndex += syncs[j].n_pdos;
+                entriesOff += n_Entries;
             }
         }
 
@@ -124,8 +130,8 @@ int EthercatMaster::init()
                      slaveInfo.position,
                      slaveInfo.vendor_id,
                      slaveInfo.product_code,
-                     nEntries,
-                     nPdos,
+                     totalEntries,
+                     totalPdos,
                      slaveInfo.sync_count);
 
         slavei.setPdoEntries(entries);
@@ -137,7 +143,11 @@ int EthercatMaster::init()
         delete[] pdos;
         delete[] entries;
     }
-
+    
+    for (int i = 0; i < nSlaves; i++)
+    {
+        cout << slave[i] << endl;
+    }
 
     offControlWord = new unsigned int[nSlaves];
     offTargetPosition = new unsigned int[nSlaves];
@@ -324,7 +334,7 @@ int EthercatMaster::active()
 void EthercatMaster::clear() 
 {
     slave.erase(slave.begin(), slave.end());
-    if(!master){
+    if(master){
         ecrt_release_master(master);
     }
     master = nullptr;

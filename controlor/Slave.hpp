@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string>
 #include <ecrt.h>
+using std::ostream;
 using std::string;
 
 enum ALState
@@ -43,6 +44,8 @@ class Slave
 			  unsigned int nEntries,
 			  unsigned int nPdos,
 			  unsigned int nSyncMangers);
+		Slave(const Slave &s);
+		
 
 		~Slave();
 		void setPdoEntries(const ec_pdo_entry_info_t *entries);
@@ -58,5 +61,7 @@ class Slave
 		unsigned int nEntries() const;
 		const ec_pdo_entry_info_t *pdoEntry() const;
 		const ec_sync_info_t *syncManger() const;
+		friend std::ostream &operator<<(std::ostream &os, const Slave &s);
+		void printEntries(ostream &os);
 };
 #endif // __SLAVE_H__
