@@ -1,9 +1,14 @@
 #include "Slave.hpp"  
 #include <string.h>
 #include <iostream>
+#include <stdint.h>
+#include <iomanip>
 using std::dec;
 using std::endl;
 using std::hex;
+using std::ios;
+using std::setfill;
+using std::setw;
 
 Slave::Slave(const string &name,
              uint16_t alias,
@@ -152,25 +157,27 @@ void Slave::printEntries(std::ostream &os)
 
 std::ostream& operator<<(std::ostream &os, const Slave &s) 
 {
-    os << "name:\t\t\"" << s.name << "\"" << endl
-       << "vender id:\t\t" << s.vendorId << endl
-       << "product code:\t\t" << s.productCode << endl
+    os << "name:              \"" << s.name << "\"" << endl
+       << "vender id:         " << s.vendorId << endl
+       << "product code:      " << s.productCode << endl
        << "pdo entries:" << endl;
     for (int i = 0; i < s.nPdoEntries; i++)
     {
-        os << "0x" << hex << s.pdoEntries[i].index << ",\t" << s.pdoEntries[i].subindex << ",\t" << dec << s.pdoEntries[i].bit_length << endl;
+        os << "0x" << hex << s.pdoEntries[i].index << "    0x" << setfill('0')
+           << setw(2) << (unsigned int)s.pdoEntries[i].subindex 
+           << "    " << dec << (unsigned int)s.pdoEntries[i].bit_length << endl;
     }
 
     os << "pdos:" << endl;
     for (int i = 0; i < s.nPdos; i++)
     {
-        os << "0x" << hex << s.pdos[i].index << ",\t" << dec << s.pdos[i].n_entries << endl;
+        os << hex << s.pdos[i].index << ",    " << dec << s.pdos[i].n_entries << endl;
     }
 
     os << "sync mangers:" << endl;
     for (int i = 0; i < s.nSyncMangers; i++)
     {
-        os << i << "\t" << s.syncMangers[i].dir << "\t" <<  s.syncMangers[i].n_pdos << "\t" << s.syncMangers[i].watchdog_mode << endl;
+        os << i << "    " << s.syncMangers[i].dir << "    " <<  s.syncMangers[i].n_pdos << "    " << s.syncMangers[i].watchdog_mode << endl;
     }
     return os;
 }

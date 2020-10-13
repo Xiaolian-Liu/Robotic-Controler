@@ -102,15 +102,19 @@ int EthercatMaster::init()
 
         ec_pdo_entry_info_t *entries = new ec_pdo_entry_info_t[totalEntries];
         int entriesOff = 0;
+        int pdoOff= 0;
         for (int j = 0; j < sync_Count; j++)
         {
             int n_Pdos = syncs[j].n_pdos;
             if(n_Pdos > 0)
             {
-                int n_Entries = pdos[pdoIndex].n_entries;
+                int n_Entries = pdos[pdoOff].n_entries;
                 for (int entrysIndex = 0; entrysIndex < n_Entries; entrysIndex++)
                 {
-                    int err = ecrt_master_get_pdo_entry(master, i, j, 0, entrysIndex, entries + entriesOff + entrysIndex);
+                    ec_pdo_entry_info_t entriesGet;
+//                    int err = ecrt_master_get_pdo_entry(master, i, j, 0, entrysIndex, entries + entriesOff + entrysIndex);
+                    int err = ecrt_master_get_pdo_entry(master, i, j, 0, entrysIndex, &entriesGet);
+                    entries[entriesOff+entrysIndex] = entriesGet;
                     if(err){
                         cerr << "Master finit failed, can't get the pdo entries" << endl;
                         delete[] syncs;
@@ -120,6 +124,7 @@ int EthercatMaster::init()
 
                     }
                 }
+                pdoOff++;
                 entriesOff += n_Entries;
             }
         }
@@ -144,6 +149,7 @@ int EthercatMaster::init()
         delete[] entries;
     }
     
+
     for (int i = 0; i < nSlaves; i++)
     {
         cout << slave[i] << endl;
@@ -168,12 +174,12 @@ int EthercatMaster::init()
     offTouchProbeSatte = new unsigned int[nSlaves];
     offTouchProbePos1 = new unsigned int[nSlaves];
 
-    int totalEntries = 0;
+    int entriesNum = 0;
     for (int i = 0; i < nSlaves; i++){
-        totalEntries += slave[i].nEntries();
+        entriesNum += slave[i].nEntries();
     }
 
-    domainRegist = new ec_pdo_entry_reg_t[totalEntries+1];
+    domainRegist = new ec_pdo_entry_reg_t[entriesNum+1];
     for (int i = 0; i < nSlaves; i++)
     {
         int n = slave[i].nEntries();
@@ -253,7 +259,7 @@ int EthercatMaster::init()
 
         }
     }
-    domainRegist[totalEntries] = {};
+    domainRegist[entriesNum] = {};
 
     domain = ecrt_master_create_domain(master);
     if(!domain){
@@ -328,8 +334,41 @@ int EthercatMaster::active()
     cout << "active done! can start the cyclic function." << endl;
 }
 
+void EthercatMaster::refreshData(ReceiveData & receiveData)
+{
+    ecrt_master_receive(master);
+    ecrt_domain_process(domain);
+    ec_domain_state_t domainState;
+    ecrt_domain_state(domain, &domainState);
+    for (int i = 0; i < nSlaves; i++)
+    {
+        receiveData.statusWrod[i] = EC_READ_U16(domainPtr + offSatesWord[i]);
+        receiveData.actualPosition[i] = EC_READ_S32(domainPtr + offActualPosition[i]);
+        receiveData.actualVelocity[i] = EC_READ_S32(domainPtr + offActualVelocity[i]);
+        receiveData.actualTorque[i] = EC_READ_S16(domainPtr + offActualTorque[i]);
+        receiveData.actualOperationMode[i] = EC_READ_U8(domainPtr + offActualModeOP[i]);
+    }
+}
 
+void EthercatMaster::sendData(const TargetData &targetData) 
+{
+    for (int i = 0; i < nSlaves; i++)
+    {
+        EC_WRITE_U16(domainPtr + offControlWord[i], targetData.controlWord[i]);
+        EC_WRITE_S32(domainPtr + offTargetPosition[i], targetData.targetPosition[i]);
+        EC_WRITE_S32(domainPtr + offTargetVelocity[i], targetData.targetVelocity[i]);
+        EC_WRITE_S16(domainPtr + offTargetTorque[i], targetData.targetTorque[i]);
+        EC_WRITE_U8(domainPtr + offTargetModeOP[i], targetData.targetOperationMode[i]);
+    }
+    ecrt_domain_queue(domain);
+    ecrt_master_send(master);
+}
 
+void EthercatMaster::sync(uint64_t time) 
+{
+    ecrt_master_sync_reference_clock_to(master, time);
+    ecrt_master_sync_slave_clocks(master);
+}
 
 void EthercatMaster::clear() 
 {
@@ -389,3 +428,4 @@ void EthercatMaster::clear()
     offTouchProbePos1 = nullptr;
 
 }
+

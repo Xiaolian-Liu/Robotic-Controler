@@ -1,10 +1,9 @@
 #include "Controller.hpp"  
+#include "ReceiveData.hpp"
+#include "TargetData.hpp"
 #include <iostream>
 
-#define MEASURE_TIMING
-#define DIFF_NS(A, B) (((B).tv_sec - (A).tv_sec) * NSEC_PER_SEC + \
-(B).tv_nsec - (A).tv_nsec)
-
+ #define MEASURE_TIMING
 using std::cout;
 using std::endl;
 
@@ -26,6 +25,7 @@ void Controller::run()
         cout << "controller init master failed" << endl;
         exit();
     }
+    master.active();
     int counter = 0;
     Time wakeupTime, time;
 
@@ -45,7 +45,7 @@ void Controller::run()
         // cout << "wakeupTime:" << wakeupTime << endl;
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeupTime, NULL);
         // master.setApplicationTime(wakeupTime.totalNanoSec());
-
+        master.setApplicationTime(wakeupTime.totalNanoSec());
 #ifdef MEASURE_TIMING
         clock_gettime(CLOCK_MONOTONIC, &startTime);
         // cout << "statrTime:" << startTime << endl;
@@ -76,9 +76,22 @@ void Controller::run()
         }
 #endif
 
-        if(counter){
+        master.refreshData(receiveData);
+        clock_gettime(CLOCK_MONOTONIC, &time);
+        master.sync(time.totalNanoSec());
+        TargetData targetData;
+        for (int i = 0; i < 6; i++)
+        {
+            targetData.targetPosition[i] = receiveData.actualPosition[i];
+            targetData.targetOperationMode[i] = 0x08;
+        }
+
+            master.sendData(targetData);
+        if (counter)
+        {
             counter--;
-        }else
+        }
+        else
         {
             /* code */
             counter = frequency;

@@ -37,6 +37,8 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 
+#include <vector>
+
 #include "ecat.h"
 #include "ThreadTest.hpp"
 #include "Controller.hpp"
@@ -86,6 +88,8 @@ int main()
 //     testThread.start();
 //     testThread2.start();
 
+//    Slave s("s",0,0,0,0,1,1,1);
+//    cout << s;
 
     struct sched_param param;
     pthread_attr_t attr;
@@ -107,7 +111,7 @@ int main()
     control.start();
     while (run)
     {
-        std::cout << "the main thread\n";
+//        std::cout << "the main thread\n";
         sleep(2);
     }
     // testThread.quit();

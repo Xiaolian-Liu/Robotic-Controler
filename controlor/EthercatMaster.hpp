@@ -1,7 +1,9 @@
 #ifndef __ETHERCATMASTER_H__
 #define __ETHERCATMASTER_H__
 
-#include"Slave.hpp"
+#include "Slave.hpp"
+#include "ReceiveData.hpp"
+#include "TargetData.hpp"
 #include <vector>
 using std::vector;
 
@@ -52,5 +54,8 @@ class EthercatMaster
 		int init();
 		void setApplicationTime(uint64_t appTime);
 		int active();
+		void refreshData(ReceiveData &receiveData);
+		void sendData(const TargetData &targetData);
+		void sync(uint64_t time);
 };
 #endif // __ETHERCATMASTER_H__

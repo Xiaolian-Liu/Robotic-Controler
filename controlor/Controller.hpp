@@ -4,6 +4,9 @@
 #include "Thread.hpp"
 #include "EthercatMaster.hpp"
 #include "Time.hpp"
+#include "ReceiveData.hpp"
+#include "TargetData.hpp"
+
 
 class Controller : public Thread
 {
@@ -11,6 +14,7 @@ class Controller : public Thread
 		int frequency;
 		int cycleTime;
 		EthercatMaster master;
+		ReceiveData receiveData;
 		virtual void run();
 
 	public:
