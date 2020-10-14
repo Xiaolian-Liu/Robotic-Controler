@@ -1,0 +1,12 @@
+#ifndef ROBOTICS_GLOBAL_H
+#define ROBOTICS_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(ROBOTICS_LIBRARY)
+#  define ROBOTICSSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define ROBOTICSSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // ROBOTICS_GLOBAL_H
