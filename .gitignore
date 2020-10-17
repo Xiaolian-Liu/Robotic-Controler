@@ -40,3 +40,5 @@ teachview/kinematics/.vs/
 bin/controlor
 bin/kinematics
 bin/teachview
+robotics/.vs/robotics/v15/.suo
+*.ipch
