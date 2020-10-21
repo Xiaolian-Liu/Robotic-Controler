@@ -1,6 +1,10 @@
 #pragma once
 #include <stdint.h>
 
+#ifndef PI
+#define PI 3.14159265358979323846
+#endif
+
 /* The value of ctl_wrd */
 #define SHUDOWN                     0x0006
 #define SWITCH_ON                   0x0007
@@ -31,17 +35,24 @@
 #define CSV         0x09
 #define CST         0x0A
 
+namespace RKD {
+
 class Drive
 {
 private:
-	unsigned int bits;
-	int32_t incOff;			//increment
-	int32_t maxAcc;			//degree/s^2
-	int32_t maxVel;			//degree/2
-	int32_t maxAng;			//degree
+	unsigned int nBit;
+	int32_t offset;			//increment offset
+
 
 public:
 	Drive();
+	Drive(unsigned int bBit, int32_t offset);
+	static double degree2rad(double angle);
+	static double rad2degree(double theta);
+	double increment2jointangle(int32_t inc);
+	int32_t jointangle2increment(double jointangle);
+	void setOffset(int32_t offSet);
 	virtual ~Drive();
 };
 
+}
