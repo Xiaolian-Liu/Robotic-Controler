@@ -37,6 +37,10 @@ void Controller::run()
              exec_min_ns = 0, exec_max_ns = 0;
 #endif // MEASURE_TIMING
 
+
+    receiveData.init();
+    targetData.init();
+
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(isRun)
     {
@@ -76,17 +80,19 @@ void Controller::run()
         }
 #endif
 
-        master.refreshData(receiveData);
+        receiveData_t recvdata = master.refreshData(receiveData);
         clock_gettime(CLOCK_MONOTONIC, &time);
         master.sync(time.totalNanoSec());
-        TargetData targetData;
+
+        targetData_t tardata = targetData.getData();
         for (int i = 0; i < 6; i++)
         {
-            targetData.targetPosition[i] = receiveData.actualPosition[i];
-            targetData.targetOperationMode[i] = 0x08;
+
+            tardata.targetPosition[i] = recvdata.actualPosition[i];
+            tardata.targetOperationMode[i] = 0x08;
         }
 
-            master.sendData(targetData);
+            master.sendData(tardata);
         if (counter)
         {
             counter--;

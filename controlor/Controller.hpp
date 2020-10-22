@@ -15,6 +15,7 @@ class Controller : public Thread
 		int cycleTime;
 		EthercatMaster master;
 		ReceiveData receiveData;
+        TargetData targetData;
 		virtual void run();
 
 	public:

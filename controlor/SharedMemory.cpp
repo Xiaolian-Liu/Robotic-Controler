@@ -19,7 +19,7 @@ SharedMemory::SharedMemory(const string & name, size_t len)
     this->len = len;
 }
 
-int SharedMemory::init() 
+int SharedMemory::init()
 {
     this->fd = shm_open(this->shmName.c_str(), O_RDWR, 0);
     this->sem = sem_open(this->semName.c_str(), 0);

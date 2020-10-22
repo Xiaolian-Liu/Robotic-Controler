@@ -334,31 +334,34 @@ int EthercatMaster::active()
     cout << "active done! can start the cyclic function." << endl;
 }
 
-void EthercatMaster::refreshData(ReceiveData & receiveData)
+receiveData_t EthercatMaster::refreshData(ReceiveData & receiveData)
 {
     ecrt_master_receive(master);
     ecrt_domain_process(domain);
     ec_domain_state_t domainState;
     ecrt_domain_state(domain, &domainState);
+    receiveData_t data;
     for (int i = 0; i < nSlaves; i++)
     {
-        receiveData.statusWrod[i] = EC_READ_U16(domainPtr + offSatesWord[i]);
-        receiveData.actualPosition[i] = EC_READ_S32(domainPtr + offActualPosition[i]);
-        receiveData.actualVelocity[i] = EC_READ_S32(domainPtr + offActualVelocity[i]);
-        receiveData.actualTorque[i] = EC_READ_S16(domainPtr + offActualTorque[i]);
-        receiveData.actualOperationMode[i] = EC_READ_U8(domainPtr + offActualModeOP[i]);
+        data.statusWrod[i] = EC_READ_U16(domainPtr + offSatesWord[i]);
+        data.actualPosition[i] = EC_READ_S32(domainPtr + offActualPosition[i]);
+        data.actualVelocity[i] = EC_READ_S32(domainPtr + offActualVelocity[i]);
+        data.actualTorque[i] = EC_READ_S16(domainPtr + offActualTorque[i]);
+        data.actualOperationMode[i] = EC_READ_U8(domainPtr + offActualModeOP[i]);
     }
+    receiveData.writeData(data);
+    return data;
 }
 
-void EthercatMaster::sendData(const TargetData &targetData) 
+void EthercatMaster::sendData(const targetData_t &data) 
 {
     for (int i = 0; i < nSlaves; i++)
     {
-        EC_WRITE_U16(domainPtr + offControlWord[i], targetData.controlWord[i]);
-        EC_WRITE_S32(domainPtr + offTargetPosition[i], targetData.targetPosition[i]);
-        EC_WRITE_S32(domainPtr + offTargetVelocity[i], targetData.targetVelocity[i]);
-        EC_WRITE_S16(domainPtr + offTargetTorque[i], targetData.targetTorque[i]);
-        EC_WRITE_U8(domainPtr + offTargetModeOP[i], targetData.targetOperationMode[i]);
+        EC_WRITE_U16(domainPtr + offControlWord[i], data.controlWord[i]);
+        EC_WRITE_S32(domainPtr + offTargetPosition[i], data.targetPosition[i]);
+        EC_WRITE_S32(domainPtr + offTargetVelocity[i], data.targetVelocity[i]);
+        EC_WRITE_S16(domainPtr + offTargetTorque[i], data.targetTorque[i]);
+        EC_WRITE_U8(domainPtr + offTargetModeOP[i], data.targetOperationMode[i]);
     }
     ecrt_domain_queue(domain);
     ecrt_master_send(master);

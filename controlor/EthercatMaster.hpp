@@ -54,8 +54,8 @@ class EthercatMaster
 		int init();
 		void setApplicationTime(uint64_t appTime);
 		int active();
-		void refreshData(ReceiveData &receiveData);
-		void sendData(const TargetData &targetData);
+		receiveData_t refreshData(ReceiveData &data);
+		void sendData(const targetData_t &data);
 		void sync(uint64_t time);
 };
 #endif // __ETHERCATMASTER_H__

@@ -1,6 +1,7 @@
 #ifndef __RECEIVEDATA_H__
 #define __RECEIVEDATA_H__
 #include <stdint.h>
+#include "SharedMemory.hpp"
 
 struct receiveData_t
 {
@@ -12,7 +13,7 @@ struct receiveData_t
 };
 
 
-class ReceiveData : SharedMemory
+class ReceiveData : public SharedMemory
 {
 	private:
 
