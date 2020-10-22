@@ -39,10 +39,9 @@
 
 #include <vector>
 
-#include "ecat.h"
 #include "ThreadTest.hpp"
 #include "Controller.hpp"
-#include "Time.hpp"
+#include "base/Time.hpp"
 using namespace std;
 
 static int latency_target_fd;
@@ -144,7 +143,7 @@ int main()
     // cout << "t3: " << t3 << endl;
     
     return 0;
-    
+ /*
     ret = pthread_attr_init(&attr);
     if(ret)
     {
@@ -170,20 +169,18 @@ int main()
             goto out;
     }
     
-     /* Use scheduling parameters of attr */
         ret = pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
         if (ret) {
                 printf("pthread setinheritsched failed\n");
                 goto out;
         }
     
-    /* Create a pthread with specified attributes */
         ret = pthread_create(&thread, &attr, ecat_task, NULL);
         if (ret) {
                 printf("create pthread failed\n");
                 goto out;
         }
-    
+*/
         while(run)
         {
                 usleep(100000);

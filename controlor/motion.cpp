@@ -1,15 +1,6 @@
-#ifdef XENOMAI
-
-#include <rtdk.h>
-#include <native/queue.h>
-#include <native/heap.h>
-#include <native/task.h>
-
-#endif
 
 #include <sys/msg.h>
 #include <stdio.h>
-#include <commu.h>
 #include "motion.h"
 #include "circle.h"
 #include "transform.h"

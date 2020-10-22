@@ -1,7 +1,7 @@
 #ifndef __THREADTEST_H__
 #define __THREADTEST_H__
 
-#include "Thread.hpp"
+#include "base/Thread.hpp"
 
 class ThreadTest : public Thread
 {

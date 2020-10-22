@@ -1,5 +1,5 @@
 #include "ReceiveData.hpp"  
-#include "SharedMemory.hpp"
+#include "base/SharedMemory.hpp"
 #include <unistd.h>
 #include <iostream>
 #include <string.h>

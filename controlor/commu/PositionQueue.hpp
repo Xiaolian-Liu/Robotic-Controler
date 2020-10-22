@@ -1,7 +1,7 @@
 
 #pragma once
-#include "MessageQueue.hpp"
-#include "Time.hpp"
+#include "base/MessageQueue.hpp"
+#include "base/Time.hpp"
 struct incPos_t
 {
 	int32_t targetPosition[6];

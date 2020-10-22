@@ -1,7 +1,7 @@
 #ifndef __RECEIVEDATA_H__
 #define __RECEIVEDATA_H__
 #include <stdint.h>
-#include "SharedMemory.hpp"
+#include "base/SharedMemory.hpp"
 
 struct receiveData_t
 {

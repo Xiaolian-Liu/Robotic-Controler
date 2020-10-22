@@ -1,6 +1,6 @@
 #include "Controller.hpp"  
-#include "ReceiveData.hpp"
-#include "TargetData.hpp"
+#include "commu/ReceiveData.hpp"
+#include "commu/TargetData.hpp"
 #include <iostream>
 
  #define MEASURE_TIMING

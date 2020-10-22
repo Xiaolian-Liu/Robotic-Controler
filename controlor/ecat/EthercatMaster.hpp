@@ -2,8 +2,8 @@
 #define __ETHERCATMASTER_H__
 
 #include "Slave.hpp"
-#include "ReceiveData.hpp"
-#include "TargetData.hpp"
+#include "commu/ReceiveData.hpp"
+#include "commu/TargetData.hpp"
 #include <vector>
 using std::vector;
 

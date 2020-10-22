@@ -1,7 +1,7 @@
 #ifndef __TARGETDATA_H__
 #define __TARGETDATA_H__
 #include <stdint.h>
-#include "SharedMemory.hpp"
+#include "base/SharedMemory.hpp"
 
 struct targetData_t
 {
