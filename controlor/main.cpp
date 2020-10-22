@@ -42,6 +42,9 @@
 #include "ThreadTest.hpp"
 #include "Controller.hpp"
 #include "base/Time.hpp"
+#include "commu/ReceiveData.hpp"
+#include "commu/TargetData.hpp"
+
 using namespace std;
 
 static int latency_target_fd;
@@ -82,22 +85,8 @@ static void set_latency_target(void)
 
 int main()
 {
-//     ThreadTest testThread;
-//     ThreadTest testThread2;
-//     testThread.start();
-//     testThread2.start();
-
-//    Slave s("s",0,0,0,0,1,1,1);
-//    cout << s;
-
-    struct sched_param param;
-    pthread_attr_t attr;
-    pthread_t thread;
-    int ret;
     signal(SIGINT, signal_stop);
     signal(SIGTERM, signal_stop);
-
-
 
     if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1){
         printf("mlockall failed: %m\n");
@@ -106,43 +95,33 @@ int main()
 
     set_latency_target();
 
-    Controller control(200);
+    ReceiveData recvdata;
+    TargetData tardata;
+    recvdata.init();
+    tardata.init();
+
+    Controller control(2);
     control.start();
     while (run)
     {
-//        std::cout << "the main thread\n";
+        receiveData_t rdata = recvdata.getData();
+        std::cout << "the main thread, actual position is: " << rdata.actualPosition[0] << endl;
+        targetData_t tdata = tardata.getData();
+        tdata.targetPosition[0]++;
+        tardata.writeData((tdata));
         sleep(2);
     }
-    // testThread.quit();
-    // testThread2.quit();
     control.quit();
     control.wait();
-    // testThread.wait();
-    // testThread2.wait();
-
-    // cout << -3/2 << endl;
-    // cout << -3%2 << endl;
-    // cout << -1/2 << endl;
-    // cout << -1%2 << endl;
-    // cout << -2/2 <<endl;
-    // cout << -2%2 <<endl;
-    // cout << sizeof(long long) << endl;
-    // Time t1(100, 600000000);
-    // cout << "t1: " << t1 << endl;
-    // Time t2(50, 500000000);
-    // cout << "t2: " << t2 << endl;
-    // Time t3 = t1 + t2;
-    // cout << "t3: " << t3 << endl;
-    // t3 = t1 - t2;
-    // cout << "t3: " << t3 << endl;
-    // t1 += t2;
-    // cout << "t1: " << t1 << endl;
-    // t1 -= t2;
-    // cout << "t1: " << t1 << endl;
-    // t3 = t1;
-    // cout << "t3: " << t3 << endl;
     
     return 0;
+
+
+
+    struct sched_param param;
+    pthread_attr_t attr;
+    pthread_t thread;
+    int ret;
  /*
     ret = pthread_attr_init(&attr);
     if(ret)

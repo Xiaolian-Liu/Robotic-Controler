@@ -9,7 +9,9 @@ using std::cerr;
 SharedMemory::~SharedMemory()
 {
     close(fd);
+    shm_unlink(this->shmName.c_str());
     sem_close(sem);
+    sem_unlink(this->semName.c_str());
 }
 
 SharedMemory::SharedMemory(const string & name, size_t len) 
@@ -21,8 +23,9 @@ SharedMemory::SharedMemory(const string & name, size_t len)
 
 int SharedMemory::init()
 {
-    this->fd = shm_open(this->shmName.c_str(), O_RDWR, 0);
-    this->sem = sem_open(this->semName.c_str(), 0);
+    this->fd = shm_open(this->shmName.c_str(), O_CREAT | O_RDWR, 0666);
+//    this->fd = shm_open("abcdefgde", O_CREAT | O_RDWR, 0);
+    this->sem = sem_open(this->semName.c_str(), O_CREAT | O_RDWR, 0666, 1);
     if(fd < 0 || sem == SEM_FAILED)
     {
         cerr << "shm " << shmName << " open failed\n";

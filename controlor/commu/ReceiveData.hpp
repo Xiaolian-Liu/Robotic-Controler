@@ -12,7 +12,6 @@ struct receiveData_t
 	uint8_t actualOperationMode[6];
 };
 
-
 class ReceiveData : public SharedMemory
 {
 	private:

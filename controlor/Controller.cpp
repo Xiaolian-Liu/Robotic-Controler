@@ -3,7 +3,7 @@
 #include "commu/TargetData.hpp"
 #include <iostream>
 
- #define MEASURE_TIMING
+// #define MEASURE_TIMING
 using std::cout;
 using std::endl;
 
@@ -21,11 +21,11 @@ Controller::~Controller()
 }
 void Controller::run() 
 {
-    if(-1 == master.init()){
-        cout << "controller init master failed" << endl;
-        exit();
-    }
-    master.active();
+//    if(-1 == master.init()){
+//        cout << "controller init master failed" << endl;
+//        exit();
+//    }
+//    master.active();
     int counter = 0;
     Time wakeupTime, time;
 
@@ -49,7 +49,7 @@ void Controller::run()
         // cout << "wakeupTime:" << wakeupTime << endl;
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeupTime, NULL);
         // master.setApplicationTime(wakeupTime.totalNanoSec());
-        master.setApplicationTime(wakeupTime.totalNanoSec());
+//        master.setApplicationTime(wakeupTime.totalNanoSec());
 #ifdef MEASURE_TIMING
         clock_gettime(CLOCK_MONOTONIC, &startTime);
         // cout << "statrTime:" << startTime << endl;
@@ -80,19 +80,24 @@ void Controller::run()
         }
 #endif
 
-        receiveData_t recvdata = master.refreshData(receiveData);
+//        receiveData_t recvdata = master.refreshData(receiveData);
+        receiveData_t recvdata = receiveData.getData();
+        recvdata.actualPosition[0]++;
+        receiveData.writeData(recvdata);
+
         clock_gettime(CLOCK_MONOTONIC, &time);
-        master.sync(time.totalNanoSec());
+//        master.sync(time.totalNanoSec());
 
         targetData_t tardata = targetData.getData();
-        for (int i = 0; i < 6; i++)
-        {
+        cout << "EtherCAT master thread, target position: " << tardata.targetPosition[0] << endl;
+//        for (int i = 0; i < 6; i++)
+//        {
 
-            tardata.targetPosition[i] = recvdata.actualPosition[i];
-            tardata.targetOperationMode[i] = 0x08;
-        }
+//            tardata.targetPosition[i] = recvdata.actualPosition[i];
+//            tardata.targetOperationMode[i] = 0x08;
+//        }
 
-            master.sendData(tardata);
+//            master.sendData(tardata);
         if (counter)
         {
             counter--;

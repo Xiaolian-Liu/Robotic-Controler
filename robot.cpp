@@ -2,16 +2,7 @@
 #include <unistd.h>
 #include <signal.h>     /* where signal() is included */
 #include <sys/mman.h>   /* where mlockall() is include */
-#include <rtdk.h>
-#include <rtdm/rtdm.h>
-#include <native/task.h>
-#include <native/sem.h>
-#include <native/mutex.h>
-#include <native/timer.h>
-#include <native/heap.h>    /* where rt_heap_creat is included */
-#include <native/queue.h>
-#include <native/pipe.h>
-#include <native/event.h>
+
 #include <pthread.h>
 
 #include "EcatDrive/EcatDrive.h"
