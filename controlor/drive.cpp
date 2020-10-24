@@ -166,7 +166,7 @@ void shutdown(void * cookie)
     }
 }
 
-void driveinit(void * cookie)
+void * driveinit(void * cookie)
 {
     printf("driver init start......\n");
     faultreset();

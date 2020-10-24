@@ -46,9 +46,14 @@ void Controller::run()
     receiveData.init();
     targetData.init();
     posQueue.init();
+    statData.init();
 
     receiveData_t d = {0, 0, 0, 0, 0, 0};
     receiveData.writeData(d);
+    stateData_t st;
+    st.al_states = 0x08;
+    st.isEnable = 1;
+    statData.writeData(st);
 
     ofstream of;
     of.open("data.txt");

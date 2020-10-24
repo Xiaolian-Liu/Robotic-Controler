@@ -45,6 +45,8 @@
 #include "commu/ReceiveData.hpp"
 #include "commu/TargetData.hpp"
 #include "commu/PositionQueue.hpp"
+#include "drive.h"
+#include "motion.h"
 
 using namespace std;
 
@@ -54,33 +56,33 @@ int run = 1;
 
 void signal_stop(int sig)
 {
-        run = 0;
+    run = 0;
 }
 
 static void set_latency_target(void)
 {
-        struct stat s;
-        int err;
+    struct stat s;
+    int err;
 
-        err = stat("/dev/cpu_dma_latency", &s);
-        if (err == -1) {
-                perror("WARN: stat /dev/cpu_dma_latency failed: ");
-                return;
-        }
+    err = stat("/dev/cpu_dma_latency", &s);
+    if (err == -1) {
+            perror("WARN: stat /dev/cpu_dma_latency failed: ");
+            return;
+    }
 
 
-        latency_target_fd = open("/dev/cpu_dma_latency", O_RDWR);
-        if (latency_target_fd == -1) {
-                perror("WARN: open /dev/cpu_dma_latency: ");
-                return;
-        }
-        err = write(latency_target_fd, &latency_target_value, 4);
-        if (err < 1) {
-                printf("# error setting cpu_dma_latency to %d!", latency_target_value);
-                close(latency_target_fd);
-                return;
-        }
-        printf("# /dev/cpu_dma_latency set to %dus\n", latency_target_value);
+    latency_target_fd = open("/dev/cpu_dma_latency", O_RDWR);
+    if (latency_target_fd == -1) {
+            perror("WARN: open /dev/cpu_dma_latency: ");
+            return;
+    }
+    err = write(latency_target_fd, &latency_target_value, 4);
+    if (err < 1) {
+            printf("# error setting cpu_dma_latency to %d!", latency_target_value);
+            close(latency_target_fd);
+            return;
+    }
+    printf("# /dev/cpu_dma_latency set to %dus\n", latency_target_value);
 }
 
 
@@ -96,47 +98,31 @@ int main()
 
     set_latency_target();
 
-    ReceiveData recvdata;
-    TargetData tardata;
-    PositionQueue posqueue;
-    recvdata.init();
-    tardata.init();
-    posqueue.init();
-
     Controller control(500);
     control.start();
-    incPos_t pos = {{0,0,0,0,0,0}};
-    
+
+    pthread_t pdrive;
+    pthread_t pmotion;
+    pthread_create(&pdrive, NULL, driveinit, NULL);
+    pthread_create(&pmotion, NULL, PTP, NULL);
+
+
+
     while (run)
     {
-//        receiveData_t rdata = recvdata.getData();
-        pos.targetPosition[0]++;
-//        std::cout << "the main thread, actual position is: " << rdata.actualPosition[0] << endl;
-        std::cout << "the main thread, send position is: " << pos.targetPosition[0] << endl;
-//        targetData_t tdata = tardata.getData();
-//        tdata.targetPosition[0]++;
-//        tardata.writeData((tdata));
-        while(run){
-            if(-1 != posqueue.sendPosition(pos, 1000))
-            {
-                break;
-            }
-            usleep(500);
-        }
         sleep(1);
     }
+
     control.quit();
     control.wait();
-    
-    return 0;
 
 
+ /*
 
     struct sched_param param;
     pthread_attr_t attr;
     pthread_t thread;
     int ret;
- /*
     ret = pthread_attr_init(&attr);
     if(ret)
     {
@@ -173,20 +159,19 @@ int main()
                 printf("create pthread failed\n");
                 goto out;
         }
-*/
         while(run)
         {
                 usleep(100000);
         }
+*/
 
 out:
-        close(latency_target_fd);
-        munlockall();
 
-    ret = pthread_join(thread, NULL);
-        if (ret)
-                printf("join pthread failed: %m\n");
- 
+    pthread_join(pdrive, NULL);
+    pthread_join(pmotion, NULL);
+    
+    close(latency_target_fd);
+    munlockall();
     cout << "Hello World!" << endl;
     return 0;
 }

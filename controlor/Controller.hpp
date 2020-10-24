@@ -7,6 +7,7 @@
 #include "commu/ReceiveData.hpp"
 #include "commu/TargetData.hpp"
 #include "commu/PositionQueue.hpp"
+#include "commu/StateData.hpp"
 
 class Controller : public Thread
 {
@@ -17,6 +18,7 @@ class Controller : public Thread
 		ReceiveData receiveData;
         TargetData targetData;
         PositionQueue posQueue;
+		StateData statData;
 		virtual void run();
 
 	public:

@@ -214,7 +214,7 @@ int cir(seqJointVec & jangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int 
 }
 
 
-void PTP(void *cookie)
+void * PTP(void *cookie)
 {
 	ReceiveData recvdata;
     TargetData tardata;
