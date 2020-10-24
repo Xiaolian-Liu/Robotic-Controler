@@ -103,7 +103,7 @@ int main()
 
     pthread_t pdrive;
     pthread_t pmotion;
-    pthread_create(&pdrive, NULL, driveinit, NULL);
+//     pthread_create(&pdrive, NULL, driveinit, NULL);
     pthread_create(&pmotion, NULL, PTP, NULL);
 
 
@@ -167,7 +167,7 @@ int main()
 
 out:
 
-    pthread_join(pdrive, NULL);
+//     pthread_join(pdrive, NULL);
     pthread_join(pmotion, NULL);
     
     close(latency_target_fd);

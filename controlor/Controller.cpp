@@ -109,13 +109,13 @@ void Controller::run()
         int bytes = posQueue.getPosition(&pos);
         if(bytes == -1)
         {
-            perror("posQueue read failed");
+            // perror("posQueue read failed");
             for (int i = 0; i < 6; i++){
                 pos.targetPosition[i] = d.actualPosition[i];
             }
         }
 
-        cout << "EtherCAT master thread, target position: " << pos.targetPosition[0] << endl;
+        // cout << "EtherCAT master thread, target position: " << pos.targetPosition[0] << endl;
         for (int i = 0; i < 6;i++)
         {
             d.actualPosition[i] = pos.targetPosition[i];

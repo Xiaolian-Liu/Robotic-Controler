@@ -2,6 +2,7 @@
 #include <sys/msg.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <fstream>
 #include "motion.h"
 #include "circle.h"
 #include "transform.h"
@@ -10,7 +11,9 @@
 #include "commu/TargetData.hpp"
 #include "commu/PositionQueue.hpp"
 
-const joinpos_t  home = {{0, 0 , 0, 0, 0, 0}};
+using std::ofstream;
+
+const joinpos_t home = {{0, 0, 0, 0, 0, 0}};
 const incpos_t  dabao = {-59471, 3373567, 3254210, 3424, 107103, 121782};
 const joinpos_t dabao1 = {0, 54, -54, 0, 0, 0};
 const double maxangle[6] =
@@ -91,7 +94,10 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, int a, int v, int f)
                            acc, 
                            vel,
                            f);
-	PositionQueue posqueue;
+
+	PositionQueue posqueue;//
+	posqueue.init();//
+
 	incpos_t inchome = jointangle2increment(pf);
 	for(int j=0; j<6; j++)
 	{
@@ -101,10 +107,15 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, int a, int v, int f)
     {	
 		// printf("%f\n", namda[i]);
 		joinpos_t jp;
+		ofstream of;
+		of.open("angles.txt", std::ios::app);
         for(int j=0; j<6; j++)
         {	
             jp.joi[j] = p0.joi[j]+(pf.joi[j]-p0.joi[j])*namda[i];
+			of << jp.joi[j] << " ";
         }
+		of << std::endl;
+
         // vjoin.push_back(jp);
 		incpos_t ip = jointangle2increment(jp);
 		incPos_t iP;
@@ -112,6 +123,7 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, int a, int v, int f)
 		{
 			iP.targetPosition[i] = ip.inc[i];
 		}
+
 		posqueue.sendPosition(iP);
 	}
     return 0;
@@ -257,6 +269,7 @@ void * PTP(void *cookie)
 	if(ptp(ij0, ijhome, 30, 15) < 0){
 		printf("PTP function failed\n");
 	}
+
 	joinpos_t jps;
 	cartpos_t cps;
 	cps.pe[0] = 1000; cps.pe[1] = 100; cps.pe[2] = 630;
@@ -266,7 +279,6 @@ void * PTP(void *cookie)
 	if(ptp(ijhome, jps, 30, 15) < 0){
 		printf("PTP function failed\n");
 	}
-	
 
 	CartPose ps, p0, pi, pf;
 	ps.pe << 1000, 100, cps.pe[2];
@@ -400,8 +412,18 @@ void * PTP(void *cookie)
 	Tf = transl(pf.pe, Rf);
 
 	lin(angles, ps, p0, 5, 5);
+
+	ofstream of;		//
+	of.open("angles.txt", std::ios::app);//
+
 	for(size_t i=0; i<angles.size(); i++)
 	{
+		for (int j = 0; j < 6; j++)//
+		{
+			of << angles[i][j] << " ";
+		}
+		of << std::endl;//
+
 		DriveVec ip = Joint2Drive(angles[i]);
 		incPos_t iP;
 		for(int j=0; j<6; j++)
@@ -410,10 +432,17 @@ void * PTP(void *cookie)
 		}
 		posqueue.sendPosition(iP);
 	}
+	std::cout << "lin:ps->p0 succeed!\n";
 
 	lin(angles, p0, pf, 5, 5);
 	for(size_t i=0; i<angles.size(); i++)
 	{
+		for (int j = 0; j < 6; j++)//
+		{
+			of << angles[i][j] << " ";
+		}
+		of << std::endl;//
+
 		DriveVec ip = Joint2Drive(angles[i]);
 		incPos_t iP;
 		for(int j=0; j<6; j++)
@@ -422,6 +451,7 @@ void * PTP(void *cookie)
 		}
 		posqueue.sendPosition(iP);
 	}
+	std::cout << "lin:p0->pf succeed!\n";
 
 	Rf = rpy2ro(pf.rpy, 'd');
 	Vector3d kb, k;
@@ -436,6 +466,13 @@ void * PTP(void *cookie)
 	arc(angles, Tf, Ti, T0, 5, 3);
 	for(size_t i=0; i<angles.size(); i++)
 	{
+		for (int j = 0; j < 6; j++)//
+		{
+			of << angles[i][j] << " ";
+		}
+		of << std::endl;//
+
+
 		DriveVec ip = Joint2Drive(angles[i]);
 		incPos_t ipo;
 		for(int j=0; j<6; j++)
@@ -444,10 +481,17 @@ void * PTP(void *cookie)
 		}
 		posqueue.sendPosition(ipo);
 	}
+	std::cout << "lin:Tf->T0 succeed!\n";
 
 	lin(angles, p0, ps, 5, 5);
 	for(size_t i=0; i<angles.size(); i++)
 	{
+		for (int j = 0; j < 6; j++)//
+		{
+			of << angles[i][j] << " ";
+		}
+		of << std::endl;//
+
 		DriveVec ip = Joint2Drive(angles[i]);
 		incPos_t ipo;
 		for(int j=0; j<6; j++)
@@ -456,7 +500,8 @@ void * PTP(void *cookie)
 		}
 		posqueue.sendPosition(ipo);
 	}
-	
+	std::cout << "lin:p0->ps succeed!\n";
+
 	if(ptp(jps, ijhome, 10, 15) < 0){
 		printf("PTP function failed\n");
 	}
@@ -464,6 +509,5 @@ void * PTP(void *cookie)
 	if(ptp(ijhome, dabao1, 30, 15) < 0){
 		printf("PTP function failed\n");
 	}
-
+	return 0;
 }
-
