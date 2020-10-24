@@ -44,6 +44,7 @@
 #include "base/Time.hpp"
 #include "commu/ReceiveData.hpp"
 #include "commu/TargetData.hpp"
+#include "commu/PositionQueue.hpp"
 
 using namespace std;
 
@@ -97,19 +98,32 @@ int main()
 
     ReceiveData recvdata;
     TargetData tardata;
+    PositionQueue posqueue;
     recvdata.init();
     tardata.init();
+    posqueue.init();
 
-    Controller control(2);
+    Controller control(500);
     control.start();
+    incPos_t pos = {{0,0,0,0,0,0}};
+    
     while (run)
     {
-        receiveData_t rdata = recvdata.getData();
-        std::cout << "the main thread, actual position is: " << rdata.actualPosition[0] << endl;
-        targetData_t tdata = tardata.getData();
-        tdata.targetPosition[0]++;
-        tardata.writeData((tdata));
-        sleep(2);
+//        receiveData_t rdata = recvdata.getData();
+        pos.targetPosition[0]++;
+//        std::cout << "the main thread, actual position is: " << rdata.actualPosition[0] << endl;
+        std::cout << "the main thread, send position is: " << pos.targetPosition[0] << endl;
+//        targetData_t tdata = tardata.getData();
+//        tdata.targetPosition[0]++;
+//        tardata.writeData((tdata));
+        while(run){
+            if(-1 != posqueue.sendPosition(pos, 1000))
+            {
+                break;
+            }
+            usleep(500);
+        }
+        sleep(1);
     }
     control.quit();
     control.wait();

@@ -12,9 +12,10 @@ class PositionQueue : public MessageQueue
 	private:
 
 	public:
-
-		PositionQueue();
-		incPos_t getPosition();
+        PositionQueue();
+        PositionQueue(int flag);
+        int getPosition(incPos_t * pos);
+        int getPosition(incPos_t * pos, Time timeOut);
 		int sendPosition(incPos_t pos);
 		int sendPosition(incPos_t pos, Time timeOut);
 		~PositionQueue();

@@ -6,7 +6,7 @@
 #include "base/Time.hpp"
 #include "commu/ReceiveData.hpp"
 #include "commu/TargetData.hpp"
-
+#include "commu/PositionQueue.hpp"
 
 class Controller : public Thread
 {
@@ -16,6 +16,7 @@ class Controller : public Thread
 		EthercatMaster master;
 		ReceiveData receiveData;
         TargetData targetData;
+        PositionQueue posQueue;
 		virtual void run();
 
 	public:

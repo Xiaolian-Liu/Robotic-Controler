@@ -17,16 +17,16 @@ extern int run;
 
 void faultreset(void)
 {
-    ReceiveData rdata;
+    ReceiveData recvdata;
     TargetData tardata;
     StateData stadata;
-    rdata.init();
+    recvdata.init();
     tardata.init();
     stadata.init();
     while (run)
     {
-        receiveData_t data = rdata.getData();
-        if (0x08 == data.alState)
+        stateData_t sdata = stadata.getData();
+        if (0x08 == sdata.al_states)
         {
             break;
         }   
@@ -36,18 +36,18 @@ void faultreset(void)
 
     while(run)
     {   
-        receiveData_t data = rdata.getData();
-        if( ((data.statusWrod[0] & 0x004f) == 0x0040) && ((data.statusWrod[1] & 0x004f) == 0x0040) &&
-            ((data.statusWrod[2] & 0x004f) == 0x0040) && ((data.statusWrod[3] & 0x004f) == 0x0040) &&
-            ((data.statusWrod[4] & 0x004f) == 0x0040) && ((data.statusWrod[5] & 0x004f) == 0x0040) )
+        receiveData_t rdata = recvdata.getData();
+        if( ((rdata.statusWrod[0] & 0x004f) == 0x0040) && ((rdata.statusWrod[1] & 0x004f) == 0x0040) &&
+            ((rdata.statusWrod[2] & 0x004f) == 0x0040) && ((rdata.statusWrod[3] & 0x004f) == 0x0040) &&
+            ((rdata.statusWrod[4] & 0x004f) == 0x0040) && ((rdata.statusWrod[5] & 0x004f) == 0x0040) )
         {
             break;
         }
-        targetData_t tdata;
+        targetData_t tdata = tardata.getData();
         for (int i = 0; i < 6; i++)
         {
             // printf("slave %d status: %d\n", i, data.statusWrod[i]);
-            if( (data.statusWrod[i] & 0x0008) == 0x0008 )   ////fault
+            if( (rdata.statusWrod[i] & 0x0008) == 0x0008 )   ////fault
 
                 tdata.controlWord[i] = FAULT_RESET;
         }
@@ -61,13 +61,15 @@ void enable(void)
 {
     ReceiveData recvdata;
     TargetData tardata;
-    S
+    StateData stadata;
     recvdata.init();
     tardata.init();
+    stadata.init();
+
     while(run)
     {
-        stateData_t sdata = recvdata.getData();
-        if (0x08 == rdata.alState)
+        stateData_t sdata = stadata.getData();
+        if (0x08 == sdata.al_states)
         {
             break;
         }   
@@ -91,11 +93,11 @@ void enable(void)
     int enableN = 0;
     while( (!isfault) && run )
     {
-        targetData_t tdata;
+        targetData_t tdata = tardata.getData();
+        rdata = recvdata.getData();
         for (int i = 0; i < 6; i++)
         {
             tdata.targetOperationMode[i] = CSP;
-            rdata = recvdata.getData();
             if ((rdata.statusWrod[i] & 0x006f) == 0x0027) // opreation enable
             {
                 if(0 == enable[i])
@@ -120,48 +122,48 @@ void enable(void)
         tardata.writeData(tdata);
         sleep(2);
     }
-    rdata = recvdata.getData();
-    rdata.isEnable
-    state->isEnable = 1;
+    stateData_t sdata = stadata.getData();
+    sdata.isEnable = 1;
+    stadata.writeData(sdata);
 }
 
 void shutdown(void * cookie)
 {
-    // rt_print_auto_init(1);
-    bind_heap();
+    ReceiveData recvdata;
+    TargetData tardata;
+    StateData stadata;
+    recvdata.init();
+    tardata.init();
+    stadata.init();
+
     while(1)
     {
-        driverstate_t * state;
-        state = stat_alloc();
-        if(0x08 == (state->al_states & 0x08))   
+        stateData_t sdata = stadata.getData();
+        if (0x08 == (sdata.al_states & 0x08))
         {
-            stat_free();
             break;
         } 
         printf("Waiting for Ethercat communication to complete......\n");
-        stat_free();
-        slepp(1000000000);
+        sleep(1);
     }
 
     while(1)
     {
-        driverdata_t * data;
-        data = data_alloc();
-        if( ((data->StatusWord[0]&0x006f) == 0x0021) && ((data->StatusWord[1]&0x006f) == 0x0021) &&
-            ((data->StatusWord[2]&0x006f) == 0x0021) && ((data->StatusWord[3]&0x006f) == 0x0021) &&
-            ((data->StatusWord[4]&0x006f) == 0x0021) && ((data->StatusWord[5]&0x006f) == 0x0021) ) // ready to switch on
+        receiveData_t rdata = recvdata.getData();
+        if (((rdata.statusWrod[0] & 0x006f) == 0x0021) && ((rdata.statusWrod[1] & 0x006f) == 0x0021) &&
+            ((rdata.statusWrod[2] & 0x006f) == 0x0021) && ((rdata.statusWrod[3] & 0x006f) == 0x0021) &&
+            ((rdata.statusWrod[4] & 0x006f) == 0x0021) && ((rdata.statusWrod[5] & 0x006f) == 0x0021)) // ready to switch on
         {
-            data_free();
             break;
-        }    
-        for(int i=0; i<6; i++)
+        }
+        targetData_t tdata = tardata.getData();
+        for (int i = 0; i < 6; i++)
         {
             tdata.controlWord[i] = SHUDOWN;
         }
-        data_free();
-        slepp(2000000);
+        tardata.writeData(tdata);
+        sleep(1);
     }
-    unbind_heap();
 }
 
 void driveinit(void * cookie)
@@ -169,7 +171,7 @@ void driveinit(void * cookie)
     printf("driver init start......\n");
     faultreset();
     printf("the fault of drive is reset\n");
-    slepp(1000000000);
+    sleep(1);
     enable();
     printf("init done!\n");
 }

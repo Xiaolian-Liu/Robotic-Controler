@@ -1,8 +1,14 @@
 #include "PositionQueue.hpp"  
 
 PositionQueue::PositionQueue() : 
-MessageQueue("PositionQueue", O_CREAT|O_RDWR,
- 0666, {0,1024,1024,0})
+MessageQueue("PositionQueue", O_CREAT|O_RDWR, 0666, sizeof(incPos_t),1024)
+
+{
+
+}
+
+PositionQueue::PositionQueue(int flag) :
+MessageQueue("PositionQueue", flag, 0666, sizeof(incPos_t),1024)
 
 {
 
@@ -13,16 +19,25 @@ PositionQueue::~PositionQueue()
 
 }
 
-incPos_t PositionQueue::getPosition() 
+int PositionQueue::getPosition(incPos_t * pos)
 {
-    incPos_t res;
-    mq_receive(mqd, (char *)&res, sizeof(incPos_t), 0);
+    ssize_t res = mq_receive(mqd, (char *)pos, sizeof(incPos_t), NULL);
+    int b = sizeof(incPos_t);
+    mq_attr attra;
+    mq_getattr(mqd, &attra);
+    int c = attra.mq_msgsize;
+    int a = errno;
     return res;
+}
+
+int PositionQueue::getPosition(incPos_t * pos, Time timeOut)
+{
+    return mq_timedreceive(mqd, (char *)pos, sizeof(incPos_t), NULL, &timeOut);
 }
 
 int PositionQueue::sendPosition(incPos_t pos) 
 {
-    return mq_send(mqd, (char *)&pos, sizeof(incPos_t), 0);
+    return mq_send(mqd, (char *)&pos, sizeof(incPos_t), NULL);
 }
 
 int PositionQueue::sendPosition(incPos_t pos, Time timeOut) 

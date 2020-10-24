@@ -9,3 +9,4 @@ done
 /etc/init.d/ethercat start
 
 chmod 606 /dev/cpu_dma_latency
+echo "1024">/proc/sys/fs/mqueue/msg_max

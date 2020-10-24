@@ -25,14 +25,14 @@ struct stateData_t
     uint8_t             isEnable;
 };
 
-class stateData : public SharedMemory
+class StateData : public SharedMemory
 {
 	private:
 
 	public:
 
-		stateData();
+        StateData();
 		stateData_t getData() const;
 		void writeData(const stateData_t &data) const;
-		~stateData();
+        ~StateData();
 };

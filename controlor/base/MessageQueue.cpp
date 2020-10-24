@@ -1,35 +1,45 @@
 #include "MessageQueue.hpp"  
 #include <iostream>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+
 using std::cerr;
 
 MessageQueue::MessageQueue()
 {
-    this->queueName = "MessageQueue";
-    this->attrDefault = true;
+    this->queueName = "/MessageQueue";
     this->mode = 0666;
     this->oflag = O_CREAT | O_RDWR;
+    this->attr.mq_maxmsg = 1024;
+    this->attr.mq_msgsize = 24;
 }
 
-MessageQueue::MessageQueue(const string &name, int oflag, mode_t mode, mq_attr attr) 
+MessageQueue::MessageQueue(const string &name)
 {
-    this->queueName = "MessageQueue"+name;
+    this->queueName = "/MessageQueue" + name;
+    this->mode = 0666;
+    this->oflag = O_CREAT | O_RDWR;
+    this->attr.mq_maxmsg = 1024;
+    this->attr.mq_msgsize = 24;
+}
+
+MessageQueue::MessageQueue(const string &name, int oflag, mode_t mode, long msgsize, long maxmsg)
+{
+    this->queueName = "/MessageQueue"+name;
     this->oflag = oflag;
     this->mode = mode;
-    this->attr = attr;
-    this->attrDefault = false;
+    this->attr.mq_flags = 0;
+    this->attr.mq_maxmsg = maxmsg;
+    this->attr.mq_msgsize = msgsize;
 }
 
 int MessageQueue::init() 
 {
-    if(attrDefault){
-        mqd = mq_open(queueName.c_str(), oflag, mode, NULL);
-    }
-    else{
-        mqd = mq_open(queueName.c_str(), oflag, mode, &attr);
-    }
+    mqd = mq_open(this->queueName.c_str(), oflag, mode, &attr);
     if((mode_t)-1 == mqd)
     {
-        cerr << "MessageQueue open failed\n";
+        perror("MessageQueue open failed: ");
         return -1;
     }
     return 0;
@@ -38,7 +48,6 @@ int MessageQueue::init()
 void MessageQueue::setAttr(mq_attr attr) 
 {
     this->attr = attr;
-    this->attrDefault = false;
 }
 
 mq_attr MessageQueue::getAttr() 
