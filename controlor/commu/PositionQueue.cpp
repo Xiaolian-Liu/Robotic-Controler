@@ -1,14 +1,14 @@
 #include "PositionQueue.hpp"  
 
 PositionQueue::PositionQueue() : 
-MessageQueue("PositionQueue", O_CREAT|O_RDWR, 0666, sizeof(incPos_t),1024)
+MessageQueue("PositionQueue", O_CREAT|O_RDWR, 0666, sizeof(incPos_t),2048)
 
 {
 
 }
 
 PositionQueue::PositionQueue(int flag) :
-MessageQueue("PositionQueue", flag, 0666, sizeof(incPos_t),1024)
+MessageQueue("PositionQueue", flag, 0666, sizeof(incPos_t),2048)
 
 {
 

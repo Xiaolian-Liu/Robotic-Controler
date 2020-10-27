@@ -105,6 +105,11 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, int a, int v, int f)
 	}
     for(unsigned int i=0; i<namda.size(); i++)
     {	
+        if(0 == i)
+        {
+            int b = 0;
+        }
+
 		// printf("%f\n", namda[i]);
 		joinpos_t jp;
 		ofstream of;
@@ -124,6 +129,10 @@ int ptp(const joinpos_t & p0, const joinpos_t & pf, int a, int v, int f)
 			iP.targetPosition[i] = ip.inc[i];
 		}
 
+        if(i == namda.size()-1)
+        {
+            int a = 0;
+        }
 		posqueue.sendPosition(iP);
 	}
     return 0;
@@ -240,7 +249,7 @@ void * PTP(void *cookie)
 
 	incpos_t ip0;
 
-	while(1)
+    while(1)
 	{
 		stateData_t sdata = stadata.getData();
 		if (1 == sdata.isEnable)
@@ -509,5 +518,6 @@ void * PTP(void *cookie)
 	if(ptp(ijhome, dabao1, 30, 15) < 0){
 		printf("PTP function failed\n");
 	}
-	return 0;
+
+    return NULL;
 }

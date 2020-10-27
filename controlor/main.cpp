@@ -165,8 +165,6 @@ int main()
         }
 */
 
-out:
-
 //     pthread_join(pdrive, NULL);
     pthread_join(pmotion, NULL);
     
