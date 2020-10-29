@@ -27,6 +27,7 @@ typedef queue<incpos_t> queuei;
  * 	return 0 is noerr, -1 is err
  * *****************************************************************/
 int ptp(const joinpos_t & p0, const joinpos_t & pf, int a, int v, int f = 500);
+int ptp(seqJointVec &jangle, const JointVec &p0, const JointVec &pf, int a, int v, int f = 500);
 // int ptp(const incpos_t & inc0, const incpos_t & incf, int a, int v, int f = 500 );
 // int ptp(const joinpos_t & p0, const cartpos_t & cpf, int a, int v, int f = 500 );
 void * PTP(void *cookie);

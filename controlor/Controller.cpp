@@ -113,15 +113,17 @@ void Controller::run()
             for (int i = 0; i < 6; i++){
                 pos.targetPosition[i] = d.actualPosition[i];
             }
+        }else
+        {
+            // cout << "EtherCAT master thread, target position: " << pos.targetPosition[0] << endl;
+            for (int i = 0; i < 6;i++)
+            {
+                d.actualPosition[i] = pos.targetPosition[i];
+                of << pos.targetPosition[i] << " ";
+            }
+            of << endl;
         }
 
-        // cout << "EtherCAT master thread, target position: " << pos.targetPosition[0] << endl;
-        for (int i = 0; i < 6;i++)
-        {
-            d.actualPosition[i] = pos.targetPosition[i];
-            of << pos.targetPosition[i] << " ";
-        }
-        of << endl;
         //        for (int i = 0; i < 6; i++)
         //        {
 
