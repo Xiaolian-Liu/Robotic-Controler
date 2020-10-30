@@ -7,6 +7,8 @@
 #include <fstream>
 
 // #define MEASURE_TIMING
+// #define FILE_OUT
+
 using std::cout;
 using std::endl;
 using std::ofstream;
@@ -26,11 +28,11 @@ Controller::~Controller()
 }
 void Controller::run() 
 {
-    // if(-1 == master.init()){
-    //     cout << "controller init master failed" << endl;
-    //     exit();
-    // }
-    // master.active();
+    if(-1 == master.init()){
+        cout << "controller init master failed" << endl;
+        exit();
+    }
+    master.active();
     int counter = 0;
     Time wakeupTime, time;
 
@@ -48,24 +50,18 @@ void Controller::run()
     posQueue.init();
     statData.init();
 
-    receiveData_t d = {0, 0, 0, 0, 0, 0};
-    receiveData.writeData(d);
-    stateData_t st;
-    st.al_states = 0x08;
-    st.isEnable = 1;
-    statData.writeData(st);
-
+#ifdef FILE_OUT
     ofstream of;
     of.open("data.txt");
+#endif
 
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(isRun)
     {
         wakeupTime.addNanoSec(cycleTime);
 
-        // cout << "wakeupTime:" << wakeupTime << endl;
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeupTime, NULL);
-        // master.setApplicationTime(wakeupTime.totalNanoSec());
+        master.setApplicationTime(wakeupTime.totalNanoSec());
 #ifdef MEASURE_TIMING
         clock_gettime(CLOCK_MONOTONIC, &startTime);
         // cout << "statrTime:" << startTime << endl;
@@ -96,50 +92,49 @@ void Controller::run()
         }
 #endif
 
-    //    receiveData_t recvdata = master.refreshData(receiveData);
-//        receiveData_t recvdata = receiveData.getData();
-//        recvdata.actualPosition[0]++;
-//        receiveData.writeData(recvdata);
+        // receiveData_t recvdata = master.refreshData(receiveData);
+        receiveData_t recvdata;
 
         clock_gettime(CLOCK_MONOTONIC, &time);
-//        master.sync(time.totalNanoSec());
+        master.sync(time.totalNanoSec());
 
-//        targetData_t tardata = targetData.getData();
+        // targetData_t tardata = targetData.getData();
+        targetData_t tardata;
+
         incPos_t pos;
         int bytes = posQueue.getPosition(&pos);
         if(bytes == -1)
         {
-            // perror("posQueue read failed");
-            for (int i = 0; i < 6; i++){
-                pos.targetPosition[i] = d.actualPosition[i];
+            for (int i = 0; i < 6; i++)
+            {
+                tardata.targetPosition[i] = recvdata.actualPosition[i];
             }
         }else
         {
-            // cout << "EtherCAT master thread, target position: " << pos.targetPosition[0] << endl;
             for (int i = 0; i < 6;i++)
             {
-                d.actualPosition[i] = pos.targetPosition[i];
-                of << pos.targetPosition[i] << " ";
+                tardata.targetPosition[i] = pos.targetPosition[i];
             }
-            of << endl;
         }
 
-        //        for (int i = 0; i < 6; i++)
-        //        {
+#ifdef FILE_OUT
+        for (int i = 0; i < 6;i++)
+        {
+            of << tardata.targetPosition[i] << " ";
+        }
+        of << endl;
+#endif
 
-        //            tardata.targetPosition[i] = recvdata.actualPosition[i];
-        //            tardata.targetOperationMode[i] = 0x08;
-        //        }
+        master.sendData(tardata);
 
-        //            master.sendData(tardata);
         if (counter)
         {
             counter--;
-            }
-            else
-            {
-                /* code */
-                counter = frequency;
+        }
+        else
+        {
+            /* code */
+            counter = frequency;
 
 #ifdef MEASURE_TIMING
             // output timing stats

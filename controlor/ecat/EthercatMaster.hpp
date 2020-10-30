@@ -4,6 +4,7 @@
 #include "Slave.hpp"
 #include "commu/ReceiveData.hpp"
 #include "commu/TargetData.hpp"
+#include "commu/StateData.hpp"
 #include <vector>
 using std::vector;
 
@@ -55,6 +56,7 @@ class EthercatMaster
 		void setApplicationTime(uint64_t appTime);
 		int active();
 		receiveData_t refreshData(ReceiveData &data);
+		stateData_t refreshStata(StateData &data);
 		void sendData(const targetData_t &data);
 		void sync(uint64_t time);
 };

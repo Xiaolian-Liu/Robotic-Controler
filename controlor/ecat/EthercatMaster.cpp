@@ -1,6 +1,7 @@
 #include "EthercatMaster.hpp"  
 #include <iostream>
 #include <string>
+#include "commu/StateData.hpp"
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -284,6 +285,13 @@ int EthercatMaster::init()
             initRes = -1;
             goto init_end;
         }
+        
+        if (ecrt_slave_config_sdo8(slaveConfig[i], 0x6060, 0, 8))  /*set the operation mode 8 RSP */
+        {
+            cerr << "Failed to configure sdo. \n";
+            goto init_end;
+        }
+
 
         cout << "Configuring Slave" << i << " PDOs...\n";
         if(ecrt_slave_config_pdos(slaveConfig[i], EC_END, slave[i].syncManger())){
@@ -351,6 +359,27 @@ receiveData_t EthercatMaster::refreshData(ReceiveData & receiveData)
     }
     receiveData.writeData(data);
     return data;
+}
+
+stateData_t EthercatMaster::refreshStata(StateData &data) 
+{
+    ec_domain_state_t ds;
+    ecrt_domain_state(domain, &ds);
+
+    ec_master_state_t ms;
+    ecrt_master_state(master, &ms);
+
+    stateData_t state = data.getData();
+    state.al_states = ms.al_states;
+    state.link_up = ms.link_up;
+    state.slaves_responding = ms.slaves_responding;
+
+    state.WKC = ds.working_counter;
+    state.WC_state = ds.wc_state;
+    state.redundancy_active = ds.redundancy_active;
+
+    data.writeData(state);
+    return state;
 }
 
 void EthercatMaster::sendData(const targetData_t &data) 
