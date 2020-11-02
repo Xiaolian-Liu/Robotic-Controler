@@ -7,9 +7,11 @@ SOURCES += \
     base/MessageQueue.cpp \
     base/SharedMemory.cpp \
     base/Thread.cpp \
+    base/ThreadTest.cpp \
     base/Time.cpp \
     commu/PositionQueue.cpp \
     commu/ReceiveData.cpp \
+    commu/StateData.cpp \
     commu/TargetData.cpp \
     ecat/EthercatMaster.cpp \
     ecat/Slave.cpp \
@@ -19,11 +21,10 @@ SOURCES += \
     kinematics/trajectory.cpp \
     kinematics/transform.cpp \
     Controller.cpp \
+    drive.cpp \
     main.cpp \
-    motion.cpp \
-    ThreadTest.cpp \
-    commu/StateData.cpp \
-    drive.cpp
+    motion.cpp
+
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -32,9 +33,11 @@ HEADERS += \
     base/MessageQueue.hpp \
     base/SharedMemory.hpp \
     base/Thread.hpp \
+    base/ThreadTest.hpp \
     base/Time.hpp \
     commu/PositionQueue.hpp \
     commu/ReceiveData.hpp \
+    commu/StateData.hpp \
     commu/TargetData.hpp \
     ecat/EthercatMaster.hpp \
     ecat/Slave.hpp \
@@ -44,11 +47,8 @@ HEADERS += \
     kinematics/trajectory.h \
     kinematics/transform.h \
     Controller.hpp \
-    motion.h \
-    ThreadTest.hpp \
-    commu/StateData.hpp \
-    drive.h
-
+    drive.h \
+    motion.h
 
 INCLUDEPATH += /home/vito/Robotic-Controler/include
 

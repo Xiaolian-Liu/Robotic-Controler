@@ -39,7 +39,6 @@
 
 #include <vector>
 
-#include "ThreadTest.hpp"
 #include "Controller.hpp"
 #include "base/Time.hpp"
 #include "commu/ReceiveData.hpp"
@@ -98,13 +97,14 @@ int main()
 
     set_latency_target();
 
-    Controller control(500);
+    Controller control(200);
     control.start();
 
     pthread_t pdrive;
     pthread_t pmotion;
-//    pthread_create(&pdrive, NULL, driveinit, NULL);
-//     pthread_create(&pmotion, NULL, PTP, NULL);
+    pthread_create(&pdrive, NULL, driveinit, NULL);
+    sleep(10);
+    pthread_create(&pmotion, NULL, PTP, NULL);
 
 
 
@@ -165,8 +165,8 @@ int main()
         }
 */
 
-//    pthread_join(pdrive, NULL);
-//     pthread_join(pmotion, NULL);
+    pthread_join(pdrive, NULL);
+    pthread_join(pmotion, NULL);
     
     close(latency_target_fd);
     munlockall();

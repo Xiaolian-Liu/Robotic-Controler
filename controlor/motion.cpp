@@ -7,11 +7,13 @@
 #include "circle.h"
 #include "transform.h"
 #include "commu/ReceiveData.hpp"
-#include "commu/StateData.hpp"
 #include "commu/TargetData.hpp"
 #include "commu/PositionQueue.hpp"
+#include "commu/StateData.hpp"
 
 using std::ofstream;
+extern int run;
+extern int beEnable;
 
 const joinpos_t home = {{0, 0, 0, 0, 0, 0}};
 const incpos_t  dabao = {-59471, 3373567, 3254210, 3424, 107103, 121782};
@@ -240,31 +242,28 @@ int cir(seqJointVec & jangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int 
 
 void * PTP(void *cookie)
 {
-	ReceiveData recvdata;
-    TargetData tardata;
-    StateData stadata;
+    printf("PTP/n");
 	PositionQueue posqueue;
-    recvdata.init();
-    tardata.init();
-    stadata.init();
 	posqueue.init();
+
 	printf("Satrt PTP......\n");
 
 	incpos_t ip0;
 
-    while(1)
+    while(run)
 	{
-		stateData_t sdata = stadata.getData();
-		if (1 == sdata.isEnable)
+		stateData_t sdata = StateData::getData();
+        if (1 == beEnable)
 		{
 			printf("go to break\n");
 			break;
 		}
-
+        printf("Enable ID: %d\n", StateData::data.isEnable);
+        printf("Enable ID: %d\n", beEnable);
 		sleep(2);
 	}
 	
-	receiveData_t rdata = recvdata.getData();
+	receiveData_t rdata = ReceiveData::getData();
 	for (int i = 0; i < 6; i++)
 	{
 		ip0.inc[i] = rdata.actualPosition[i];
@@ -284,7 +283,7 @@ void * PTP(void *cookie)
 	joinpos_t ijhome = {{0, 0, 0, 0, -90, 0}};
 	JointVec vijhome;
     vijhome << 0, 0, 0, 0, -90, 0;
-    ptp(angles, vij0, vijhome, 15, 15);
+    ptp(angles, vij0, vijhome, 15, 15,200);
 
 	ofstream of;		//
 	of.open("angles.txt");//
@@ -320,7 +319,7 @@ void * PTP(void *cookie)
 
 	JointVec vjps;
 	vjps << jps.joi[0], jps.joi[1], jps.joi[2], jps.joi[3], jps.joi[4], jps.joi[5];
-    ptp(angles, vijhome, vjps, 15, 15);
+    ptp(angles, vijhome, vjps, 15, 15,200);
 	for(size_t i=0; i<angles.size(); i++)
 	{
 		for (int j = 0; j < 6; j++)//
@@ -338,6 +337,30 @@ void * PTP(void *cookie)
 		posqueue.sendPosition(iP);
 	}
 	std::cout << "ptp:jhome->js succeed!\n";
+
+    ptp(angles, vjps, vijhome, 15, 15,200);
+    for(size_t i=0; i<angles.size(); i++)
+    {
+        for (int j = 0; j < 6; j++)//
+        {
+            of << angles[i][j] << " ";
+        }
+        of << std::endl;//
+
+        DriveVec ip = Joint2Drive(angles[i]);
+        incPos_t iP;
+        for(int j=0; j<6; j++)
+        {
+            iP.targetPosition[j] = ip[j];
+        }
+        posqueue.sendPosition(iP);
+    }
+    std::cout << "ptp:js->jhome succeed!\n";
+
+
+    return NULL;
+
+
 
     CartPose ps, p0, pi, pf;
 	ps.pe << 1000, 100, cps.pe[2];
@@ -469,7 +492,7 @@ void * PTP(void *cookie)
 	Ti = transl(pi.pe, Ri);
 	Tf = transl(pf.pe, Rf);
 
-	lin(angles, ps, p0, 5, 5);
+    lin(angles, ps, p0, 5, 5,200);
 
 	for(size_t i=0; i<angles.size(); i++)
 	{
@@ -489,7 +512,7 @@ void * PTP(void *cookie)
 	}
 	std::cout << "lin:ps->p0 succeed!\n";
 
-	lin(angles, p0, pf, 5, 5);
+    lin(angles, p0, pf, 5, 5,200);
 	for(size_t i=0; i<angles.size(); i++)
 	{
 		for (int j = 0; j < 6; j++)//
@@ -520,7 +543,7 @@ void * PTP(void *cookie)
 	Tf = transl(pf.pe, Rf);
 //	arc(angles, Tf, Ti, T0, 5, 3);
 
-    lin(angles, pf, p0, 5, 5);
+    lin(angles, pf, p0, 5, 5,200);
 	for(size_t i=0; i<angles.size(); i++)
 	{
 		for (int j = 0; j < 6; j++)//
@@ -540,7 +563,7 @@ void * PTP(void *cookie)
 	}
 	std::cout << "lin:Tf->T0 succeed!\n";
 
-	lin(angles, p0, ps, 5, 5);
+    lin(angles, p0, ps, 5, 5,200);
 	for(size_t i=0; i<angles.size(); i++)
 	{
 		for (int j = 0; j < 6; j++)//
@@ -563,7 +586,7 @@ void * PTP(void *cookie)
 	// if(ptp(jps, ijhome, 10, 15) < 0){
 	// 	printf("PTP function failed\n");
 	// }
-	ptp(angles, vjps, vijhome, 30, 15);
+    ptp(angles, vjps, vijhome, 30, 15,200);
 	for(size_t i=0; i<angles.size(); i++)
 	{
 		for (int j = 0; j < 6; j++)//
@@ -589,7 +612,7 @@ void * PTP(void *cookie)
 	// if(ptp(ijhome, dabao1, 30, 15) < 0){
 	// 	printf("PTP function failed\n");
 	// }
-	ptp(angles, vijhome, vdabao1, 30, 15);
+    ptp(angles, vijhome, vdabao1, 30, 15,200);
 	for(size_t i=0; i<angles.size(); i++)
 	{
 		for (int j = 0; j < 6; j++)//

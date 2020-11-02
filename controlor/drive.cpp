@@ -14,18 +14,13 @@ using std::endl;
 using std::cout;
 using std::endl;
 extern int run;
+extern int beEnable;
 
 void faultreset(void)
 {
-    ReceiveData recvdata;
-    TargetData tardata;
-    StateData stadata;
-    recvdata.init();
-    tardata.init();
-    stadata.init();
     while (run)
     {
-        stateData_t sdata = stadata.getData();
+        stateData_t sdata = StateData::getData();
         if (0x08 == sdata.al_states)
         {
             break;
@@ -36,14 +31,14 @@ void faultreset(void)
 
     while(run)
     {   
-        receiveData_t rdata = recvdata.getData();
+        receiveData_t rdata = ReceiveData::getData();
         if( ((rdata.statusWrod[0] & 0x004f) == 0x0040) && ((rdata.statusWrod[1] & 0x004f) == 0x0040) &&
             ((rdata.statusWrod[2] & 0x004f) == 0x0040) && ((rdata.statusWrod[3] & 0x004f) == 0x0040) &&
             ((rdata.statusWrod[4] & 0x004f) == 0x0040) && ((rdata.statusWrod[5] & 0x004f) == 0x0040) )
         {
             break;
         }
-        targetData_t tdata = tardata.getData();
+        targetData_t tdata = TargetData::getData();
         for (int i = 0; i < 6; i++)
         {
             // printf("slave %d status: %d\n", i, data.statusWrod[i]);
@@ -51,7 +46,7 @@ void faultreset(void)
 
                 tdata.controlWord[i] = FAULT_RESET;
         }
-        tardata.writeData(tdata);
+        TargetData::writeData(tdata);
         sleep(2);
     } 
 }
@@ -59,16 +54,10 @@ void faultreset(void)
 
 void enable(void)
 {
-    ReceiveData recvdata;
-    TargetData tardata;
-    StateData stadata;
-    recvdata.init();
-    tardata.init();
-    stadata.init();
 
     while(run)
     {
-        stateData_t sdata = stadata.getData();
+        stateData_t sdata = StateData::getData();
         if (0x08 == sdata.al_states)
         {
             break;
@@ -77,7 +66,7 @@ void enable(void)
         sleep(1);
     }
 
-    receiveData_t rdata = recvdata.getData();
+    receiveData_t rdata = ReceiveData::getData();
     int isfault = 0;
     for(int i=0; i<6; i++)
     {
@@ -93,8 +82,8 @@ void enable(void)
     int enableN = 0;
     while( (!isfault) && run )
     {
-        targetData_t tdata = tardata.getData();
-        rdata = recvdata.getData();
+        targetData_t tdata = TargetData::getData();
+        rdata = ReceiveData::getData();
         for (int i = 0; i < 6; i++)
         {
             tdata.targetOperationMode[i] = CSP;
@@ -119,26 +108,23 @@ void enable(void)
             printf("6 Drivers are enabled\n");
             break;
         }
-        tardata.writeData(tdata);
+        TargetData::writeData(tdata);
         sleep(2);
     }
-    stateData_t sdata = stadata.getData();
-    sdata.isEnable = 1;
-    stadata.writeData(sdata);
+    stateData_t sdata = StateData::getData();
+//    sdata.isEnable = 1;
+//    StateData::writeData(sdata);
+    StateData::data.isEnable = 1;
+    beEnable = 1;
+    printf("set enable\n");
 }
 
 void shutdown(void * cookie)
 {
-    ReceiveData recvdata;
-    TargetData tardata;
-    StateData stadata;
-    recvdata.init();
-    tardata.init();
-    stadata.init();
 
     while(1)
     {
-        stateData_t sdata = stadata.getData();
+        stateData_t sdata = StateData::getData();
         if (0x08 == (sdata.al_states & 0x08))
         {
             break;
@@ -149,19 +135,19 @@ void shutdown(void * cookie)
 
     while(1)
     {
-        receiveData_t rdata = recvdata.getData();
+        receiveData_t rdata = ReceiveData::getData();
         if (((rdata.statusWrod[0] & 0x006f) == 0x0021) && ((rdata.statusWrod[1] & 0x006f) == 0x0021) &&
             ((rdata.statusWrod[2] & 0x006f) == 0x0021) && ((rdata.statusWrod[3] & 0x006f) == 0x0021) &&
             ((rdata.statusWrod[4] & 0x006f) == 0x0021) && ((rdata.statusWrod[5] & 0x006f) == 0x0021)) // ready to switch on
         {
             break;
         }
-        targetData_t tdata = tardata.getData();
+        targetData_t tdata = TargetData::getData();
         for (int i = 0; i < 6; i++)
         {
             tdata.controlWord[i] = SHUDOWN;
         }
-        tardata.writeData(tdata);
+        TargetData::writeData(tdata);
         sleep(1);
     }
 }

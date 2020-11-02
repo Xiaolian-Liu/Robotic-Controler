@@ -1,7 +1,7 @@
 #ifndef __RECEIVEDATA_H__
 #define __RECEIVEDATA_H__
 #include <stdint.h>
-#include "base/SharedMemory.hpp"
+#include <pthread.h>
 
 struct receiveData_t
 {
@@ -12,15 +12,16 @@ struct receiveData_t
 	uint8_t actualOperationMode[6];
 };
 
-class ReceiveData : public SharedMemory
+class ReceiveData
 {
 	private:
+		static receiveData_t data;
+		static pthread_mutex_t mutex;
 
 	public:
-
 		ReceiveData();
 		~ReceiveData();
-		receiveData_t getData() const;
-		void writeData(const receiveData_t &data) const;
+        static receiveData_t getData();
+        static void writeData(const receiveData_t &wdata);
 };
 #endif // __RECEIVEDATA_H__

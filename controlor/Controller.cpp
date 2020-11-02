@@ -1,23 +1,21 @@
 #include "Controller.hpp"  
 #include "commu/ReceiveData.hpp"
 #include "commu/TargetData.hpp"
+#include "commu/PositionQueue.hpp"
 #include <iostream>
-#include <stdio.h>
-#include <errno.h>
 #include <fstream>
 
 // #define MEASURE_TIMING
-// #define FILE_OUT
-
+#define FILE_OUT
 using std::cout;
 using std::endl;
 using std::ofstream;
+extern int beEnable;
 
 Controller::Controller(int freq) : Thread("Controller", 98), 
                                     frequency(freq),
                                     cycleTime(Time::NANO_PER_SEC / freq), 
-                                    master(Time::NANO_PER_SEC/freq,0),
-                                    posQueue(O_CREAT | O_RDWR | O_NONBLOCK){
+                                    master(Time::NANO_PER_SEC/freq,0){
 
 
 }
@@ -44,16 +42,12 @@ void Controller::run()
              exec_min_ns = 0, exec_max_ns = 0;
 #endif // MEASURE_TIMING
 
-
-    receiveData.init();
-    targetData.init();
-    posQueue.init();
-    statData.init();
-
 #ifdef FILE_OUT
     ofstream of;
     of.open("data.txt");
 #endif
+
+    posQueue.init();
 
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(isRun)
@@ -62,12 +56,11 @@ void Controller::run()
 
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeupTime, NULL);
         master.setApplicationTime(wakeupTime.totalNanoSec());
+
 #ifdef MEASURE_TIMING
         clock_gettime(CLOCK_MONOTONIC, &startTime);
-        // cout << "statrTime:" << startTime << endl;
         latency_ns = Time::diffNanoSec(startTime, wakeupTime);
 
-        // latency_ns = (wakeupTime - startTime).totalNanoSec();
         period_ns = (startTime - lastStartTime).totalNanoSec();
         exec_ns = (endTime - lastStartTime).totalNanoSec();
         lastStartTime = startTime;
@@ -92,17 +85,26 @@ void Controller::run()
         }
 #endif
 
-        // receiveData_t recvdata = master.refreshData(receiveData);
+
         receiveData_t recvdata;
+        stateData_t statedata;
+        master.refreshData(recvdata);
+        master.refreshStata(statedata);
+        ReceiveData::writeData(recvdata);
+        StateData::writeData(statedata);
 
         clock_gettime(CLOCK_MONOTONIC, &time);
         master.sync(time.totalNanoSec());
 
-        // targetData_t tardata = targetData.getData();
-        targetData_t tardata;
+        targetData_t tardata = TargetData::getData();
+//        for (int i = 0; i < 6; i++)
+//        {
+////            targetData.targetPosition[i] = receiveData.actualPosition[i];
+//            targetData.targetOperationMode[i] = 0x08;
+//        }
 
         incPos_t pos;
-        int bytes = posQueue.getPosition(&pos);
+        int bytes = posQueue.getPosition(&pos, 500);
         if(bytes == -1)
         {
             for (int i = 0; i < 6; i++)
@@ -114,18 +116,30 @@ void Controller::run()
             for (int i = 0; i < 6;i++)
             {
                 tardata.targetPosition[i] = pos.targetPosition[i];
+                // tardata.targetPosition[i] = recvdata.actualPosition[i];
             }
         }
 
 #ifdef FILE_OUT
-        for (int i = 0; i < 6;i++)
+        if(beEnable)
         {
-            of << tardata.targetPosition[i] << " ";
+            for (int i = 0; i < 6;i++)
+            {
+                of << tardata.targetPosition[i] << " ";
+            }
+            of << endl;
         }
-        of << endl;
+
 #endif
 
+        // cout << "0x" << std::hex << tardata.controlWord[0] << endl;
+//        for (int i = 0; i < 6; i++)
+//        {
+//            tardata.targetPosition[i] = recvdata.actualPosition[i];
+//        }
         master.sendData(tardata);
+
+
 
         if (counter)
         {

@@ -1,7 +1,7 @@
 
 #pragma once
 #include <stdint.h>
-#include "base/SharedMemory.hpp"
+#include <pthread.h>
 
 struct stateData_t
 {
@@ -25,14 +25,15 @@ struct stateData_t
     uint8_t             isEnable;
 };
 
-class StateData : public SharedMemory
+class StateData
 {
 	private:
+        static pthread_mutex_t mutex;
 
-	public:
-
+    public:
+        static stateData_t data;
         StateData();
-		stateData_t getData() const;
-		void writeData(const stateData_t &data) const;
+		static stateData_t getData();
+		static void writeData(const stateData_t &data);
         ~StateData();
 };

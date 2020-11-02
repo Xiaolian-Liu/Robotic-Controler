@@ -1,20 +1,29 @@
-#include "StateData.hpp"  
+#include "StateData.hpp"
 
-StateData::StateData() : SharedMemory("StateData", sizeof(stateData_t))
+int beEnable = 0;
+stateData_t StateData::data = {0};
+pthread_mutex_t StateData::mutex = PTHREAD_MUTEX_INITIALIZER;
+
+StateData::StateData()
 {
 
 }
 
-stateData_t StateData::getData() const
+
+stateData_t StateData::getData()
 {
     stateData_t res;
-    SharedMemory::read(&res);
+    pthread_mutex_lock(&mutex);
+    res = data;
+    pthread_mutex_unlock(&mutex);
     return res;
 }
 
-void StateData::writeData(const stateData_t &data) const
+void StateData::writeData(const stateData_t &wdata)
 {
-    SharedMemory::write(&data);
+    pthread_mutex_lock(&mutex);
+    data = wdata;
+    pthread_mutex_unlock(&mutex);
 }
 
 StateData::~StateData()

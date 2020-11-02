@@ -6,6 +6,7 @@
 #include "commu/TargetData.hpp"
 #include "commu/StateData.hpp"
 #include <vector>
+
 using std::vector;
 
 class EthercatMaster  
@@ -55,9 +56,9 @@ class EthercatMaster
 		int init();
 		void setApplicationTime(uint64_t appTime);
 		int active();
-		receiveData_t refreshData(ReceiveData &data);
-		stateData_t refreshStata(StateData &data);
-		void sendData(const targetData_t &data);
+		void refreshData(receiveData_t &receivedata);
+		void refreshStata(stateData_t &statedata);
+		void sendData(const targetData_t &targetData);
 		void sync(uint64_t time);
 };
 #endif // __ETHERCATMASTER_H__

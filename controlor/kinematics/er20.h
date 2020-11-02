@@ -86,12 +86,12 @@ using std::vector;
 #define ER20_J6	0.8
 
 // The incremental offset
-#define INCOFF1		-59471
-#define INCOFF2 	-157781
-#define INCOFF3		9281
-#define INCOFF4		3402
-#define INCOFF5		92418
-#define INCOFF6		27715
+#define INCOFF1		-444828
+#define INCOFF2 	-151240
+#define INCOFF3		16557
+#define INCOFF4		-8990
+#define INCOFF5		147800
+#define INCOFF6		18150
 
 // The bits of encoders in the momotor
 #define BITS 	17

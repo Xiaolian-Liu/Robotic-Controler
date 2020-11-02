@@ -1,7 +1,6 @@
 #include "EthercatMaster.hpp"  
 #include <iostream>
 #include <string>
-#include "commu/StateData.hpp"
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -285,13 +284,12 @@ int EthercatMaster::init()
             initRes = -1;
             goto init_end;
         }
-        
+
         if (ecrt_slave_config_sdo8(slaveConfig[i], 0x6060, 0, 8))  /*set the operation mode 8 RSP */
         {
             cerr << "Failed to configure sdo. \n";
             goto init_end;
         }
-
 
         cout << "Configuring Slave" << i << " PDOs...\n";
         if(ecrt_slave_config_pdos(slaveConfig[i], EC_END, slave[i].syncManger())){
@@ -342,26 +340,23 @@ int EthercatMaster::active()
     cout << "active done! can start the cyclic function." << endl;
 }
 
-receiveData_t EthercatMaster::refreshData(ReceiveData & receiveData)
+void EthercatMaster::refreshData(receiveData_t & receivedata)
 {
     ecrt_master_receive(master);
     ecrt_domain_process(domain);
     ec_domain_state_t domainState;
     ecrt_domain_state(domain, &domainState);
-    receiveData_t data;
     for (int i = 0; i < nSlaves; i++)
     {
-        data.statusWrod[i] = EC_READ_U16(domainPtr + offSatesWord[i]);
-        data.actualPosition[i] = EC_READ_S32(domainPtr + offActualPosition[i]);
-        data.actualVelocity[i] = EC_READ_S32(domainPtr + offActualVelocity[i]);
-        data.actualTorque[i] = EC_READ_S16(domainPtr + offActualTorque[i]);
-        data.actualOperationMode[i] = EC_READ_U8(domainPtr + offActualModeOP[i]);
+        receivedata.statusWrod[i] = EC_READ_U16(domainPtr + offSatesWord[i]);
+        receivedata.actualPosition[i] = EC_READ_S32(domainPtr + offActualPosition[i]);
+        receivedata.actualVelocity[i] = EC_READ_S32(domainPtr + offActualVelocity[i]);
+        receivedata.actualTorque[i] = EC_READ_S16(domainPtr + offActualTorque[i]);
+        receivedata.actualOperationMode[i] = EC_READ_U8(domainPtr + offActualModeOP[i]);
     }
-    receiveData.writeData(data);
-    return data;
 }
 
-stateData_t EthercatMaster::refreshStata(StateData &data) 
+void EthercatMaster::refreshStata(stateData_t &state) 
 {
     ec_domain_state_t ds;
     ecrt_domain_state(domain, &ds);
@@ -369,7 +364,6 @@ stateData_t EthercatMaster::refreshStata(StateData &data)
     ec_master_state_t ms;
     ecrt_master_state(master, &ms);
 
-    stateData_t state = data.getData();
     state.al_states = ms.al_states;
     state.link_up = ms.link_up;
     state.slaves_responding = ms.slaves_responding;
@@ -378,19 +372,18 @@ stateData_t EthercatMaster::refreshStata(StateData &data)
     state.WC_state = ds.wc_state;
     state.redundancy_active = ds.redundancy_active;
 
-    data.writeData(state);
-    return state;
 }
 
-void EthercatMaster::sendData(const targetData_t &data) 
+
+void EthercatMaster::sendData(const targetData_t &targetData)
 {
     for (int i = 0; i < nSlaves; i++)
     {
-        EC_WRITE_U16(domainPtr + offControlWord[i], data.controlWord[i]);
-        EC_WRITE_S32(domainPtr + offTargetPosition[i], data.targetPosition[i]);
-        EC_WRITE_S32(domainPtr + offTargetVelocity[i], data.targetVelocity[i]);
-        EC_WRITE_S16(domainPtr + offTargetTorque[i], data.targetTorque[i]);
-        EC_WRITE_U8(domainPtr + offTargetModeOP[i], data.targetOperationMode[i]);
+        EC_WRITE_U16(domainPtr + offControlWord[i], targetData.controlWord[i]);
+        EC_WRITE_S32(domainPtr + offTargetPosition[i], targetData.targetPosition[i]);
+        // EC_WRITE_S32(domainPtr + offTargetVelocity[i], targetData.targetVelocity[i]);
+        // EC_WRITE_S16(domainPtr + offTargetTorque[i], targetData.targetTorque[i]);
+        // EC_WRITE_U8(domainPtr + offTargetModeOP[i], targetData.targetOperationMode[i]);
     }
     ecrt_domain_queue(domain);
     ecrt_master_send(master);

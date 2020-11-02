@@ -1,7 +1,8 @@
 #ifndef __TARGETDATA_H__
 #define __TARGETDATA_H__
 #include <stdint.h>
-#include "base/SharedMemory.hpp"
+#include <pthread.h>
+
 
 struct targetData_t
 {
@@ -14,15 +15,17 @@ struct targetData_t
 };
 
 
-class TargetData : public SharedMemory
+class TargetData
 {
 	private:
+        static targetData_t data;
+		static pthread_mutex_t mutex;
 
 	public:
 		TargetData();
 		~TargetData();
 
-		targetData_t getData() const;
-		void writeData(const targetData_t &data) const;
+		static targetData_t getData();
+		static void writeData(const targetData_t &data);
 };
 #endif // __TARGETDATA_H__
