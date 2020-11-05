@@ -280,10 +280,10 @@ void * PTP(void *cookie)
 
 	JointVec vij0;
 	vij0 << ij0.joi[0], ij0.joi[1], ij0.joi[2], ij0.joi[3], ij0.joi[4], ij0.joi[5];
-	joinpos_t ijhome = {{0, 0, 0, 0, -90, 0}};
+    joinpos_t ijhome = {{0, 0, 0, 0, 0, 0}};
 	JointVec vijhome;
     vijhome << 0, 0, 0, 0, -90, 0;
-    ptp(angles, vij0, vijhome, 15, 15,200);
+    ptp(angles, vij0, vijhome, 5, 10,200);
 
 	ofstream of;		//
 	of.open("angles.txt");//
@@ -338,7 +338,29 @@ void * PTP(void *cookie)
 	}
 	std::cout << "ptp:jhome->js succeed!\n";
 
-    ptp(angles, vjps, vijhome, 15, 15,200);
+    ptp(angles, vjps, vijhome, 5, 10,200);
+    for(size_t i=0; i<angles.size(); i++)
+    {
+        for (int j = 0; j < 6; j++)//
+        {
+            of << angles[i][j] << " ";
+        }
+        of << std::endl;//
+
+        DriveVec ip = Joint2Drive(angles[i]);
+        incPos_t iP;
+        for(int j=0; j<6; j++)
+        {
+            iP.targetPosition[j] = ip[j];
+        }
+        posqueue.sendPosition(iP);
+    }
+    std::cout << "ptp:js->jhome succeed!\n";
+
+
+    JointVec vdabao1;
+    vdabao1 << 0, 54, -54, 0, 0, 0;
+    ptp(angles, vijhome, vdabao1, 5, 10,200);
     for(size_t i=0; i<angles.size(); i++)
     {
         for (int j = 0; j < 6; j++)//
@@ -606,8 +628,6 @@ void * PTP(void *cookie)
 	std::cout << "lin:ps->phome succeed!\n";
 
 
-	JointVec vdabao1;
-	vdabao1 << 0, 54, -54, 0, 0, 0;
 
 	// if(ptp(ijhome, dabao1, 30, 15) < 0){
 	// 	printf("PTP function failed\n");

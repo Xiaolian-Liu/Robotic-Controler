@@ -23,7 +23,8 @@ SOURCES += \
     Controller.cpp \
     drive.cpp \
     main.cpp \
-    motion.cpp
+    motion.cpp \
+    server.cpp
 
 
 include(deployment.pri)
@@ -48,7 +49,8 @@ HEADERS += \
     kinematics/transform.h \
     Controller.hpp \
     drive.h \
-    motion.h
+    motion.h \
+    server.hpp
 
 INCLUDEPATH += /home/vito/Robotic-Controler/include
 

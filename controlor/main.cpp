@@ -46,6 +46,7 @@
 #include "commu/PositionQueue.hpp"
 #include "drive.h"
 #include "motion.h"
+#include "server.hpp"
 
 using namespace std;
 
@@ -100,12 +101,19 @@ int main()
     Controller control(200);
     control.start();
 
+    Server server(200, 9734);
+    server.start();
+
     pthread_t pdrive;
     pthread_t pmotion;
-    pthread_create(&pdrive, NULL, driveinit, NULL);
-    sleep(10);
-    pthread_create(&pmotion, NULL, PTP, NULL);
-
+//    pthread_create(&pdrive, NULL, driveinit, NULL);
+    driveinit(nullptr);
+//    sleep(10);
+    int resp = pthread_create(&pmotion, NULL, PTP, NULL);
+    if(resp != 0)
+    {
+        perror("thread creat failed: ");
+    }
 
 
     while (run)
@@ -116,8 +124,10 @@ int main()
     control.quit();
     control.wait();
 
+    server.quit();
+    server.wait();
 
- /*
+    /*
 
     struct sched_param param;
     pthread_attr_t attr;
