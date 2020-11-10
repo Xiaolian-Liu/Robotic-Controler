@@ -53,6 +53,7 @@ Matrix4d SerialLink::fkine(const vector<double> &q)
 		res = res * links[i].A(q[i]);
 	}
 	res = res * this->tool;
+	return res;
 }
 
 Matrix4d SerialLink::fkinef(const vector<double> &q)

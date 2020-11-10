@@ -20,6 +20,7 @@
 // http://eigen.tuxfamily.org/dox-devel/group__TopicStlContainers.html
 #include <vector>
 #include <map>
+#include "Drive.h"
 /*
 #ifndef int32_t
 #define int32_t int
@@ -82,6 +83,52 @@ using std::vector;
 #define ER20_J5	1.6
 #define ER20_J6	0.8
 
+// The Maximum and minimum values
+
+//  degree/s^2 , the max Acceleration is three times of max velocity
+#define MAXACC1		510
+#define MAXACC2		495
+#define MAXACC3		510
+#define MAXACC4		1080
+#define MAXACC5		1080
+#define MAXACC6		1800
+
+//  degree/s
+#define MAXVEL1		170
+#define MAXVEL2		165
+#define MAXVEL3		170
+#define MAXVEL4		360
+#define MAXVEL5		360
+#define MAXVEL6		600
+
+
+// degree
+#define MAXANG1		90
+#define MAXANG2		64
+#define MAXANG3		165
+#define MAXANG4		178
+#define MAXANG5		132
+#define MAXANG6		180
+
+#define MINANG1		-90
+#define MINANG2		-142
+#define MINANG3		-73
+#define MINANG4		-178
+#define MINANG5		-132
+#define MINANG6		-180
+
+//the max cart speed mm/s
+#define LMAXVEL     1000
+//the max cart acceleration mm/s^2
+#define LMAXACC     2000
+//the max rotation speed in cart space, uinits: degree/s
+#define RMAXVEL		180
+//the max rotation acceleration in cart space, uinits: degree/s^2
+#define RMAXACC		540
+
+
+
+
 
 #include "SerialLink.h"
 namespace RKD {
@@ -89,6 +136,53 @@ namespace RKD {
 class ER20 :
 	public SerialLink
 {
+private:
+	const double a1 = ER20_a1;
+	const double d1 = ER20_d1;
+	const double a2 = ER20_a2;
+	const double a3 = ER20_a3;
+	const double d3 = ER20_d3;
+	const double d4 = ER20_d4;
+	const double d6 = ER20_d6 + ER20_pe + ER20_pen;
+
+	const double a[6] =
+	{
+		ER20_a1,
+		ER20_a2,
+		ER20_a3,
+		ER20_a4,
+		ER20_a5,
+		ER20_a6
+	};
+	const double alpha[6] =
+	{
+		alpha1,
+		alpha2,
+		alpha3,
+		alpha4,
+		alpha5,
+		alpha6
+	};
+	const double d[6] =
+	{
+		ER20_d1,
+		ER20_d2,
+		ER20_d3,
+		ER20_d4,
+		ER20_d5,
+		ER20_d6
+	};
+	const double offset[6] =
+	{
+		offset1,
+		offset2,
+		offset3,
+		offset4,
+		offset5,
+		offset6
+	};
+
+
 public:
 	ER20();
 	~ER20();

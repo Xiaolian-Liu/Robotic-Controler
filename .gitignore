@@ -21,9 +21,6 @@ teachview/Makefile
 teachview/Makefile
 *.db
 *.opendb
-*.filters
-*.sln
-*.vcxproj
 teachview/kinematics/.vs/kinematics/v15/.suo
 teachview/kinematics/.vs/
 *.tlog

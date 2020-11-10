@@ -52,6 +52,7 @@ public:
 	double increment2jointangle(int32_t inc);
 	int32_t jointangle2increment(double jointangle);
 	void setOffset(int32_t offSet);
+	uint16_t enable(uint16_t stateWord);
 	virtual ~Drive();
 };
 

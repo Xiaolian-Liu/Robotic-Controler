@@ -42,6 +42,30 @@ void Drive::setOffset(int32_t offSet)
 	this->offset = offSet;
 }
 
+uint16_t Drive::enable(uint16_t statusWord)
+{
+	if (statusWord & 0x006f == 0x0027)
+	{
+		return ENABLE_OPERATION;
+	}
+	else if (statusWord & 0x004f == 0x0040)
+	{
+		return SHUDOWN;
+	}
+	else if (statusWord & 0x006f == 0x0021)
+	{
+		return SWITCH_ON;
+	}
+	else if (statusWord & 0x006f == 0x0023)
+	{
+		return ENABLE_OPERATION;
+	}
+	else
+	{
+		return ENABLE_OPERATION;
+	}
+}
+
 
 Drive::~Drive()
 {

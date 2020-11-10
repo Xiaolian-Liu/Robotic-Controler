@@ -20,8 +20,8 @@ class SerialLink
 public:
 	vector<Link> links;
 	Vector3d gravity;
-	Vector4d base;
-	Vector4d tool;
+	Matrix4d base;
+	Matrix4d tool;
 
 	string name;
 	string manuf;
