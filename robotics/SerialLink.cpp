@@ -14,13 +14,8 @@ SerialLink::SerialLink()
 
 
 SerialLink::SerialLink(const vector<Link> &links, const string &name, const string &manuf, bool mdh)
+	: links(links), name(name), manuf(manuf), mdh(mdh)
 {
-	this->n = links.size();
-	this->mdh = mdh;
-	this->name = name;
-	this->manuf = manuf;
-	this->links = links;
-
 	this->gravity << 0, 0, -9.80665;
 	this->base.setIdentity();
 	this->tool.setIdentity();
@@ -32,20 +27,16 @@ SerialLink::~SerialLink()
 
 }
 
-SerialLink::SerialLink(const string &name, const string &manuf, int nDof, bool mdh)
+SerialLink::SerialLink(const string &name, const string &manuf, bool mdh) 
+	: name(name), manuf(manuf), mdh(mdh)
 {
 	// TODO: Add your implementation code here.
-	this->name = name;
-	this->manuf = manuf;
-	this->n = nDof;
-	this->mdh = mdh;
-
 	this->gravity << 0, 0, -9.80665;
 	this->base.setIdentity();
 	this->tool.setIdentity();
 }
 
-Matrix4d SerialLink::fkine(const vector<double> &q)
+Matrix4d SerialLink::fkine(const JointVec &q)
 {
 	Matrix4d res = this->base;
 	for (int i = 0; i < n; i++)
@@ -56,12 +47,12 @@ Matrix4d SerialLink::fkine(const vector<double> &q)
 	return res;
 }
 
-Matrix4d SerialLink::fkinef(const vector<double> &q)
+Matrix4d SerialLink::fkinef(const JointVec &q)
 {
 	return fkine(q);
 }
 
-int SerialLink::ikine(vector<double> &q, const Matrix4d &T0, const Matrix4d &T)
+int SerialLink::ikine(JointVec & q, JointVec q0, Matrix4d T)
 {
 	return 0;
 }
@@ -75,9 +66,21 @@ int SerialLink::ikine(vector<double> &q, const Matrix4d &T0, const Matrix4d &T)
 void RKD::SerialLink::setLinks(const vector<Link> &links)
 {
 	// TODO: Add your implementation code here.
-	this->links.erase(links.begin(), links.end());
+
+	/*this->links.erase(links.begin(), links.end());
 	for (int i = 0; i < links.size(); i++)
 	{
 		this->links.push_back(links[i]);
-	}
+	}*/
+	this->links = links;
+}
+
+void RKD::SerialLink::setBase(Matrix4d m)
+{
+	this->base = m;
+}
+
+void RKD::SerialLink::setTool(Matrix4d m)
+{
+	this->tool = m;
 }

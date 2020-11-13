@@ -27,6 +27,7 @@
     <ClCompile Include="Revolute.cpp" />
     <ClCompile Include="Robotics.cpp" />
     <ClCompile Include="SerialLink.cpp" />
+    <ClCompile Include="transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CartVec.h" />
@@ -36,6 +37,7 @@
     <ClInclude Include="Revolute.h" />
     <ClInclude Include="Robotics.h" />
     <ClInclude Include="SerialLink.h" />
+    <ClInclude Include="transform.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -119,7 +121,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>

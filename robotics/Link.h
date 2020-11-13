@@ -15,10 +15,10 @@ class Link
 {
 public:
 
-	double theta;
-	double d;
-	double a;
-	double alpha;
+	double theta;	//units: rad
+	double d;		//units: m
+	double a;		//units: m
+	double alpha;	//units: rad
 
 	bool revolute;
 	bool mdh;
@@ -43,6 +43,7 @@ public:
 	// set the DH parameters of the link, 
 	// dh:the four coloums vector stores the DH parameter
 	void setDh(const Vector4d & dh, double offset);
+	void setJointLimits(const Vector2d & limits);
 	Matrix4d A(double q);
 };
 

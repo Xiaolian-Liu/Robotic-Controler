@@ -33,9 +33,9 @@ using std::vector;
 ///The datatype
 
 //The D-H linkage parameters, the length unit: mm, the angular unit: rad/degree
-#define ER20_a1  168.46
-#define ER20_a2  781.55
-#define ER20_a3  140.34
+#define ER20_a1  0.16846
+#define ER20_a2  0.78155
+#define ER20_a3  0.14034
 #define ER20_a4  0
 #define ER20_a5  0
 #define ER20_a6  0
@@ -47,14 +47,14 @@ using std::vector;
 #define alpha5	PI_2
 #define alpha6	0
 
-#define ER20_d1  504
+#define ER20_d1  0.504
 #define ER20_d2  0
-#define ER20_d3  (-0.3)
-#define ER20_d4  760.39
+#define ER20_d3  (-0.0003)
+#define ER20_d4  0.76039
 #define ER20_d5  0
-#define ER20_d6  125
-#define ER20_pe	 206
-#define ER20_pen 70
+#define ER20_d6  0.125
+#define ER20_pe	 0.206
+#define ER20_pen 0.070
 /* the offset between the D-H system and the Jointangle */
 #define offset1 0
 #define offset2 PI_2
@@ -127,10 +127,8 @@ using std::vector;
 #define RMAXACC		540
 
 
-
-
-
 #include "SerialLink.h"
+
 namespace RKD {
 
 class ER20 :
@@ -145,46 +143,19 @@ private:
 	const double d4 = ER20_d4;
 	const double d6 = ER20_d6 + ER20_pe + ER20_pen;
 
-	const double a[6] =
-	{
-		ER20_a1,
-		ER20_a2,
-		ER20_a3,
-		ER20_a4,
-		ER20_a5,
-		ER20_a6
-	};
-	const double alpha[6] =
-	{
-		alpha1,
-		alpha2,
-		alpha3,
-		alpha4,
-		alpha5,
-		alpha6
-	};
-	const double d[6] =
-	{
-		ER20_d1,
-		ER20_d2,
-		ER20_d3,
-		ER20_d4,
-		ER20_d5,
-		ER20_d6
-	};
-	const double offset[6] =
-	{
-		offset1,
-		offset2,
-		offset3,
-		offset4,
-		offset5,
-		offset6
-	};
+	vector<double> a = { 0.16846, 0.78155, 0.14034, 0 , 0, 0 };
+
+	vector<double> alpha = { PI_2, 0, PI_2, -PI_2, PI_2, 0 };
+
+	vector<double> d = { 0.504, 0, -0.3, 0.76039, 0, 0.125 };
+	
+	JointVec offset = { 0, PI_2, 0, 0, 0, 0 };
 
 
 public:
-	ER20();
+	ER20(bool modified = true);
+	virtual Matrix4d fkinef(JointVec q);	//units rad
+	virtual int ikine(JointVec &q, JointVec q0, Matrix4d T);  // units:rad
 	~ER20();
 };
 

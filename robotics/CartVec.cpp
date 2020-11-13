@@ -15,6 +15,7 @@ CartVec::CartVec(const Vector3d &pe, const Vector3d &rpy)
 
 CartVec::~CartVec()
 {
+
 }
 
 
@@ -26,10 +27,7 @@ std::ostream & operator<<(std::ostream & os, const CartVec & p)
 	// TODO: insert return statement here
 }
 
-}
-
-
-RKD::CartVec::CartVec(const CartVec & p)
+CartVec::CartVec(const CartVec & p)
 {
 	if (this != &p)
 	{
@@ -38,15 +36,41 @@ RKD::CartVec::CartVec(const CartVec & p)
 	}
 	// TODO: Add your implementation code here.
 }
-
-RKD::CartVec::CartVec(double x, double y, double z, double rx, double ry, double rz)
+CartVec::CartVec(double x, double y, double z, double rx, double ry, double rz)
 {
 	this->pe << x, y, z;
 	this->rpy << rx, ry, rz;
 }
 
-void RKD::CartVec::operator=(const CartVec & p)
+CartVec::CartVec(Matrix4d T)
+{
+	this->pe = T.block(0, 3, 2, 3);
+	this->rpy = tr2rpy(T);
+}
+
+void CartVec::operator=(const CartVec & p)
 {
 	this->pe = p.pe;
 	this->rpy = p.rpy;
 }
+
+Matrix4d CartVec::Transl() const
+{
+	return transl(pe, rpy2ro(rpy));
+}
+
+Vector3d CartVec::PE() const
+{
+	return pe;
+}
+
+Vector3d CartVec::RPY() const
+{
+	return rpy;
+}
+
+
+}
+
+
+

@@ -61,6 +61,11 @@ void Link::setDh(const Vector4d & dh, double offset)
 	this->offset = offset;
 }
 
+void Link::setJointLimits(const Vector2d & limits)
+{
+	this->qlim = limits;
+}
+
 // Link.A Link transform matrix
 Matrix4d Link::A(double q)
 {

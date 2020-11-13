@@ -3,8 +3,9 @@
 #include <vector>
 #include <Eigen\Dense>
 #include <float.h>
-
+#include "JointVec.h"
 #include "Link.h"
+#include "transform.h"
 
 
 using std::string;
@@ -27,20 +28,22 @@ public:
 	string manuf;
 	//bool fast;
 
-	int n;
+	const int n = 6;
 	//string config;
 	bool mdh;
 
 
 
 	SerialLink();
-	SerialLink(const string &name, const string &manuf, int n, bool mdh);
+	SerialLink(const string &name, const string &manuf, bool mdh);
 	SerialLink(const vector<Link> &links, const string &name, const string &manuf, bool mdh = false);
 	virtual ~SerialLink();
-	Matrix4d fkine(const vector<double> &q);
-	virtual Matrix4d fkinef(const vector<double> &q);
-	virtual int ikine(vector<double> &q, const Matrix4d &T0, const Matrix4d &T);
+	Matrix4d fkine(const JointVec &q);  //units rad
+	virtual Matrix4d fkinef(const JointVec &q);  // units rad
+	int ikine(JointVec & q, JointVec q0, Matrix4d T);
 	void setLinks(const vector<Link> &links);
+	void setBase(Matrix4d m);
+	void setTool(Matrix4d m);
 };
 
 
