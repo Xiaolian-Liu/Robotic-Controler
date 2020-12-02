@@ -10,10 +10,10 @@
 
 // #define MEASURE_TIMING
 #define FILE_OUT
+#define POSITION_QUEUE
 using std::cout;
 using std::endl;
 using std::ofstream;
-extern int beEnable;
 
 Controller::Controller(int freq) : Thread("Controller", 98), 
                                     frequency(freq),
@@ -58,14 +58,25 @@ void Controller::run()
 
     posQueue.init();
 
-    double acc = 2*pow(2,17);
-    double dec = 20*pow(2,17);
-    double deltaT = 1.0/frequency;
-    double Vmax = 10*pow(2,17);
+    // double acc = 0.5*pow(2,17);
+    // double dec = 1*pow(2,17);
+    // double deltaT = 1.0/frequency;
+    // double Vmax = 1*pow(2,17);
 
-    int32_t qlast[6];
-    int32_t vnext[6];
-    int32_t qdelta[6];
+    // int32_t x0;
+    // unsigned long n1 = (Vmax/acc)*frequency;
+    // int32_t x1 = x0 + (Vmax*Vmax)/(2*acc);
+    // u_int64_t n = 0;
+
+    // int32_t qlast[6];
+    // int32_t vnext[6];
+    // int32_t qdelta[6];
+
+    for(int i = 0; i < 6; i++)
+    {
+        master.recvData.actualPosition[i] = 0;
+    }
+
 
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(isRun)
@@ -129,7 +140,7 @@ void Controller::run()
 
         // printf("%d\n", Server::recvData.jogButton);
 
-
+/*
          if(master.state.isEnable)
          {
              int jogButton = Server::recvData.jogButton;
@@ -174,7 +185,7 @@ void Controller::run()
              {
 //                 master.targData.targetPosition[i] = master.recvData.actualPosition[i]+ (master.recvData.actualVelocity[i] + vnext[i]) * deltaT / 2;
 
-                 master.targData.targetPosition[i] += vnext[i] * deltaT;
+                 master.targData.targetPosition[i] = master.targData.targetPosition[i] + vnext[i] * deltaT;
                  qdelta[i] = (master.targData.targetPosition[i] - qlast[i])*frequency;
                  qlast[i] = master.targData.targetPosition[i];
 
@@ -185,35 +196,43 @@ void Controller::run()
 //             cout << "actualpos: " << master.recvData.actualPosition[0] << endl;
 //             cout << "tarpos: " << master.targData.targetPosition[0] << endl;
 
- #ifdef FILE_OUT
-             for (int i = 0; i < 3;i++)
-             {
-//                 ofPos << master.recvData.actualPosition[0] << " ";
-//                 ofPos << master.targData.targetPosition[0] << " ";
-
-                 ofVel << qdelta[0] << " ";
-                 ofVel << qdelta[0] << " ";
-
-             }
-//             ofPos << endl;
-             ofVel << endl;
- #endif
 
          }
+*/
 
+#ifdef MANUAL
+
+         if(master.state.isEnable)
+         {
+             n++;
+             if(n < n1)
+             {
+                 master.targData.targetPosition[0] = x0 + 0.5*acc*(n*deltaT)*(n*deltaT);
+             }
+             else
+             {
+                 master.targData.targetPosition[0] = x1 + Vmax*(n-n1)*deltaT;
+             }
+             cout << "targetPosition: " << master.targData.targetPosition[0] << endl;
+         }
 
          else
          {
+             x0 = master.recvData.actualPosition[0];
+             n = 0;
+             x1 = x0 + (Vmax*Vmax)/(2*acc);
              for (int i = 0; i < 6; i++)
              {
                  master.targData.targetPosition[i] = master.recvData.actualPosition[i];
                  vnext[i] = master.recvData.actualVelocity[i];
              }
          }
+
+#endif
         
 
+#ifdef POSITION_QUEUE
 
-/*
         incPos_t pos;
         int bytes = posQueue.getPosition(&pos, 500);
         if(bytes == -1)
@@ -233,17 +252,12 @@ void Controller::run()
         }
 
 
-#ifdef FILE_OUT
 
-        for (int i = 0; i < 6; i++)
-        {
-            ofPos << master.targData.targetPosition[0] << " ";
-        }
-        ofPos << endl;
+
+
+
 
 #endif
-
-*/
  
         if(Server::recvData.shutDown)
         {
@@ -269,6 +283,35 @@ void Controller::run()
 //        }
         // master.sendData(tardata);
         master.send();
+
+
+#ifdef FILE_OUT
+
+        for (int i = 0; i < 6; i++)
+        {
+            ofPos << master.targData.targetPosition[0] << " ";
+        }
+        ofPos << endl;
+
+#endif
+
+        if(master.state.isEnable)
+        {
+
+//#ifdef FILE_OUT
+//            for (int i = 0; i < 3;i++)
+//            {
+//            // ofPos << master.recvData.actualPosition[0] << " ";
+//            ofPos << master.targData.targetPosition[0] << " ";
+//            ofPos << master.targData.targetPosition[0] << " ";
+//            // ofVel << qdelta[0] << " ";
+//            // ofVel << qdelta[0] << " ";
+//            }
+//            ofPos << endl;
+//        // ofVel << endl;
+//#endif
+
+        }
 
         if (counter)
         {
@@ -301,4 +344,14 @@ void Controller::run()
         clock_gettime(CLOCK_MONOTONIC, (timespec *)&endTime);
 #endif // MEASURE_TIMING
     }
+}
+
+int Controller::init() 
+{
+    if(-1 == master.init()){
+        cout << "controller init master failed" << endl;
+        exit();
+    }
+    posQueue.init();
+    
 }

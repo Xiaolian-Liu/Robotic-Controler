@@ -289,7 +289,7 @@ void * PTP(void *cookie)
 
 	JointVec vij1;
 	JointVec Delta;
-	Delta << 30, -30, 0, 180, -120, 0;
+    Delta << 30, -30, 0, 90, -90, 0;
 	vij1 = vij0 + Delta;
 	// ptp(angles, vij0, vijhome, 5, 10, 200);
 	ptp(angles, vij0, vij1, 2, 5, 200);
@@ -297,6 +297,7 @@ void * PTP(void *cookie)
 
 	ofstream of;		//
 	of.open("angles.txt");//
+
 
 	for(size_t i=0; i<angles.size(); i++)
 	{
@@ -315,6 +316,7 @@ void * PTP(void *cookie)
 		posqueue.sendPosition(iP);
 	}
 	std::cout << "ptp:j0->j1 succeed!\n";
+
 
 	ptp(angles, vij1, vij0, 2, 3, 200);
 	for(size_t i=0; i<angles.size(); i++)
@@ -333,7 +335,8 @@ void * PTP(void *cookie)
 		}
 		posqueue.sendPosition(iP);
 	}
-	std::cout << "ptp:j0->j1 succeed!\n";
+    std::cout << "ptp:j1->j0 succeed!\n";
+
 	return NULL;
 
 

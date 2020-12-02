@@ -7,6 +7,7 @@
 #include "commu/ReceiveData.hpp"
 #include "commu/TargetData.hpp"
 #include "commu/PositionQueue.hpp"
+#include "kinematics/er20.h"
 
 
 class Controller : public Thread
@@ -19,8 +20,18 @@ class Controller : public Thread
 		virtual void run();
 
 	public:
+		double Vmax;
+		double acc;
+		double dec;
+		double deltaT;
+		JointVec q;
+		JointVec qNext;
+		JointVec v;
+		JointVec vNext;
+
+		int init();
 		Controller(int freq);
-        EthercatMaster * getMaster();
+		EthercatMaster * getMaster();
 		~Controller();
 };
 #endif // __CONTROLLER_H__
