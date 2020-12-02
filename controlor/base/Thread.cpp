@@ -84,6 +84,8 @@ bool Thread::start()
         isRun = true;
         return true;
     }
+    cerr << name;
+    perror(" thread creat failed: ");
     return false;
 }
 

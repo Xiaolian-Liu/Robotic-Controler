@@ -14,12 +14,12 @@ class EthercatMaster
 	private:
 		unsigned int masterIndex;
 		uint32_t cycleTime;
-		int nSlaves;
+        unsigned int nSlaves;
 		vector<Slave> slave;
-		ALState allSlavesSate;
-		bool linkUp;
+		// ALState allSlavesSate;
+		// bool linkUp;
 		ec_master_t *master;
-		ec_master_state_t state;
+        ec_master_state_t masterState;
 		ec_domain_t *domain;
 		ec_domain_state_t domainState;
 		vector<ec_slave_config_t *> slaveConfig;
@@ -33,20 +33,25 @@ class EthercatMaster
 		unsigned int *offTargetTorque;
 		unsigned int *offTargetModeOP;
 		unsigned int *offDummyByte1;
-		unsigned int *TouchProbeFunc;
+		unsigned int *offTouchProbeFunc;
 
 		unsigned int *offSatesWord;
 		unsigned int *offActualPosition;
 		unsigned int *offActualVelocity;
 		unsigned int *offActualTorque;
 		unsigned int *offActualModeOP;
-		unsigned int *offBummyByte2;
+		unsigned int *offDummyByte2;
 		unsigned int *offFollowError;
 		unsigned int *offDigitalInputs;
 		unsigned int *offTouchProbeSatte;
 		unsigned int *offTouchProbePos1;
 
+		unsigned int *offByte1;
+		unsigned int *offByte2;
+		
 		unsigned int offdata;
+		const unsigned int maxByteOffset = 6553600;
+
 
 		void clear();
 
@@ -58,7 +63,17 @@ class EthercatMaster
 		int active();
 		void refreshData(receiveData_t &receivedata);
 		void refreshStata(stateData_t &statedata);
+        void receive();
 		void sendData(const targetData_t &targetData);
+		void send();
 		void sync(uint64_t time);
+
+		receiveData_t recvData;
+        targetData_t  targData;
+        stateData_t   state;
+
+        void resetSlaveFault();
+        void enableSlave();
+        void shutDownSlave();
 };
 #endif // __ETHERCATMASTER_H__

@@ -38,6 +38,59 @@
 #include "commu/PositionQueue.hpp"
 #include "commu/StateData.hpp"
 
+
+struct server_sendData_t
+{
+    uint16_t statusWrod[6];
+    uint8_t actualOperationMode[6];
+    uint8_t alState;
+    int32_t cia402ErrorCode;
+    uint8_t journeyPercent;     //percentage of PTP, Lin, Cir ......
+
+    int32_t actualPosition[6];
+    double jointAngles[6];
+    double jointVelocity[6];
+    double jointAcceleration[6];
+    double jointTorque[6];
+    double cartPosition[6];
+};
+
+struct server_recvData_t
+{
+    uint8_t client_id;
+    int32_t targetPosition[6];
+    int32_t targetVelocity[6];
+    int16_t targetTorque[6];
+    uint8_t targetOperationMode[6];
+
+    bool startSignal;
+    bool stopSignal;
+    bool enable;
+    bool shutDown;
+    bool faultReset;
+
+    int8_t motionMode;  // 0 manual_Joint_Space
+                        // 1 manual_Cartesian_Space
+                        // 3 continuous
+
+    uint8_t velocityPercent;
+    uint8_t accelerationPercent;
+
+    int8_t jogButton;   //  1   Axis1 +
+                        //  -1  Axis1 -
+                        //  2   Axis2 +
+                        //  -2  Axis2 -
+                        //  3   Axis3 +
+                        //  4   Axis3 -    
+
+    //    Point endPoint;
+    //    Point middlePoint;
+
+    uint8_t ethercatStateMechine[6];
+    int32_t ethercatErrorCode[6];
+};
+
+
 class Server : public Thread
 {
 public:
@@ -45,6 +98,13 @@ public:
     Server(int freq, int portnum);
     ~Server();
 
+    void terminate();
+    void wait();
+
+    static server_sendData_t sendData;
+    static server_recvData_t recvData;
+    
+    static void *to_uiclient(void *data);
 
 private:
     int frequency;
@@ -53,17 +113,10 @@ private:
     socklen_t server_len, client_len;
     struct sockaddr_in server_address;
     struct sockaddr_in client_address;
+    pthread_t ui[2];
 
-    ReceiveData receiveData;
-    TargetData targetData;
-    StateData statData;
-    receiveData_t axis_wdata;
     virtual void run();
-    static void addClient();
 
-    friend void *to_uiclient(void *data);
-
-    //int client_sockfd;
 };
 
 #endif // SERVER_HPP

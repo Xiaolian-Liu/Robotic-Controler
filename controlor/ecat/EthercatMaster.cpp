@@ -11,8 +11,8 @@ EthercatMaster::EthercatMaster(uint32_t cycleTime, unsigned int index)
     this->cycleTime = cycleTime;
     this->masterIndex = index;
     nSlaves = 0;
-    allSlavesSate = INIT;
-    linkUp = false;
+    // allSlavesSate = INIT;
+    // linkUp = false;
     master = nullptr;
     domain = nullptr;
     domainPtr = nullptr;
@@ -24,17 +24,28 @@ EthercatMaster::EthercatMaster(uint32_t cycleTime, unsigned int index)
     offTargetTorque = nullptr;
     offTargetModeOP = nullptr;
     offDummyByte1 = nullptr;
-    TouchProbeFunc = nullptr;
+    offTouchProbeFunc = nullptr;
     offSatesWord = nullptr;
     offActualPosition = nullptr;
     offActualVelocity = nullptr;
     offActualTorque = nullptr;
     offActualModeOP = nullptr;
-    offBummyByte2 = nullptr;
+    offDummyByte2 = nullptr;
     offFollowError = nullptr;
     offDigitalInputs = nullptr;
     offTouchProbeSatte = nullptr;
     offTouchProbePos1 = nullptr;
+
+    offByte1 = nullptr;
+    offByte2 = nullptr;
+
+    for(int i = 0; i < 6; i++)
+    {
+        targData.controlWord[i] = 0;
+        targData.targetOperationMode[i] = 8;
+        targData.targetVelocity[i] = 0;
+        targData.targetPosition[i] = 0;
+    }
 }
 
 EthercatMaster::~EthercatMaster()
@@ -55,12 +66,12 @@ int EthercatMaster::init()
         return -1;
     }
 
-    ecrt_master_state(master, &state);
-    nSlaves = state.slaves_responding;
-    allSlavesSate = ALState(state.al_states);
-    linkUp = state.link_up;
+    ecrt_master_state(master, &masterState);
+    nSlaves = masterState.slaves_responding;
+    // allSlavesSate = ALState(masterState.al_states);
+    // linkUp = masterState.link_up;
 
-    for (int i = 0; i < nSlaves; i++)
+    for (unsigned int i = 0; i < nSlaves; i++)
     {
         ec_slave_info_t slaveInfo;
         ecrt_master_get_slave(master, i, &slaveInfo);
@@ -150,7 +161,7 @@ int EthercatMaster::init()
     }
     
 
-    for (int i = 0; i < nSlaves; i++)
+    for (unsigned int i = 0; i < nSlaves; i++)
     {
         cout << slave[i] << endl;
     }
@@ -161,26 +172,56 @@ int EthercatMaster::init()
     offTargetTorque = new unsigned int[nSlaves];
     offTargetModeOP = new unsigned int[nSlaves];
     offDummyByte1 = new unsigned int[nSlaves];
-    TouchProbeFunc = new unsigned int[nSlaves];
+    offTouchProbeFunc = new unsigned int[nSlaves];
 
     offSatesWord = new unsigned int[nSlaves];
     offActualPosition = new unsigned int[nSlaves];
     offActualVelocity = new unsigned int[nSlaves];
     offActualTorque = new unsigned int[nSlaves];
     offActualModeOP = new unsigned int[nSlaves];
-    offBummyByte2 = new unsigned int[nSlaves];
+    offDummyByte2 = new unsigned int[nSlaves];
     offFollowError = new unsigned int[nSlaves];
     offDigitalInputs = new unsigned int[nSlaves];
     offTouchProbeSatte = new unsigned int[nSlaves];
     offTouchProbePos1 = new unsigned int[nSlaves];
 
+    offByte1 = new unsigned int[nSlaves];
+    offByte2 = new unsigned int[nSlaves];
+
+    for (unsigned int i = 0; i < nSlaves; i++)
+    {
+        offControlWord[i]       = maxByteOffset;
+        offTargetPosition[i]    = maxByteOffset;
+        offTargetVelocity[i]    = maxByteOffset;
+        offTargetTorque[i]      = maxByteOffset;
+        offTargetModeOP[i]      = maxByteOffset;
+        offDummyByte1[i]        = maxByteOffset;
+        offTouchProbeFunc[i]       = maxByteOffset;
+
+        offSatesWord[i]         = maxByteOffset;
+        offActualPosition[i]    = maxByteOffset;
+        offActualVelocity[i]    = maxByteOffset;
+        offActualTorque[i]      = maxByteOffset;
+        offActualModeOP[i]      = maxByteOffset;
+        offDummyByte2[i]        = maxByteOffset;
+        offFollowError[i]       = maxByteOffset;
+        offDigitalInputs[i]     = maxByteOffset;
+        offTouchProbeSatte[i]   = maxByteOffset;
+        offTouchProbePos1[i]    = maxByteOffset;
+
+        offByte1[i]             = maxByteOffset;
+        offByte2[i]             = maxByteOffset;
+    }
+
     int entriesNum = 0;
-    for (int i = 0; i < nSlaves; i++){
+    for (unsigned int i = 0; i < nSlaves; i++){
         entriesNum += slave[i].nEntries();
     }
 
     domainRegist = new ec_pdo_entry_reg_t[entriesNum+1];
-    for (int i = 0; i < nSlaves; i++)
+
+    int ByteIndex = 0;
+    for (unsigned int i = 0; i < nSlaves; i++)
     {
         int n = slave[i].nEntries();
         for (int j = 0; j < n; j++)
@@ -210,7 +251,7 @@ int EthercatMaster::init()
                 offset = offDummyByte1 + i;
                 break;
             case 0x60b8:
-                offset = TouchProbeFunc + i;
+                offset = offTouchProbeFunc + i;
                 break;
 
 
@@ -231,7 +272,7 @@ int EthercatMaster::init()
                 offset = offActualModeOP + i;
                 break;
             case 0x5fff:
-                offset = offBummyByte2 + i;
+                offset = offDummyByte2 + i;
                 break;
             case 0x60f4:
                 offset = offFollowError + i;
@@ -244,6 +285,18 @@ int EthercatMaster::init()
                 break;
             case 0x60ba:
                 offset = offTouchProbePos1 + i;
+                break;
+            
+            case 0x0000:
+                if(ByteIndex %2 )
+                {
+                    offset = offByte2 + i;
+                }
+                else
+                {
+                    offset = offByte1 + i;
+                }
+                ByteIndex++;
                 break;
             default:
                 offset = &offdata;
@@ -268,7 +321,7 @@ int EthercatMaster::init()
         goto init_end;
     }
 
-    for (int i = 0; i < nSlaves; i++){
+    for (unsigned int i = 0; i < nSlaves; i++){
         slaveConfig.push_back(nullptr);
     }
 
@@ -311,7 +364,7 @@ int EthercatMaster::init()
     }
 
     for (int i = 0; i < nSlaves; i++){
-        ecrt_slave_config_dc(slaveConfig[i], 0x0300, cycleTime, cycleTime / 2, 0, 0);
+        ecrt_slave_config_dc(slaveConfig[i], 0x0300, cycleTime, 2000000, 0, 0);
     }
 
 init_end:
@@ -337,6 +390,14 @@ int EthercatMaster::active()
         return -1;
     }
 
+    cout << "ControlWord  " << offControlWord[0] << endl;
+    cout << "TargetPos  " << offTargetPosition[0] << endl;
+    cout << "TargetVel  " << offTargetVelocity[0] << endl;
+    cout << "ModeofOP  \n" << offTargetModeOP[0] << endl;
+
+    cout << "StatusWord  " << offSatesWord[0] << endl;
+    cout << "actualpos  " << offActualPosition[0] << endl;
+
     cout << "active done! can start the cyclic function." << endl;
 }
 
@@ -348,11 +409,30 @@ void EthercatMaster::refreshData(receiveData_t & receivedata)
     ecrt_domain_state(domain, &domainState);
     for (int i = 0; i < nSlaves; i++)
     {
-        receivedata.statusWrod[i] = EC_READ_U16(domainPtr + offSatesWord[i]);
-        receivedata.actualPosition[i] = EC_READ_S32(domainPtr + offActualPosition[i]);
-        receivedata.actualVelocity[i] = EC_READ_S32(domainPtr + offActualVelocity[i]);
-        receivedata.actualTorque[i] = EC_READ_S16(domainPtr + offActualTorque[i]);
-        receivedata.actualOperationMode[i] = EC_READ_U8(domainPtr + offActualModeOP[i]);
+        if(offSatesWord[i] != maxByteOffset)
+        {
+            receivedata.statusWrod[i] = EC_READ_U16(domainPtr + offSatesWord[i]);
+        }
+
+        if(offActualPosition[i] != maxByteOffset)
+        {
+            receivedata.actualPosition[i] = EC_READ_S32(domainPtr + offActualPosition[i]);
+        }
+
+        if(offActualVelocity[i] != maxByteOffset)
+        {
+            receivedata.actualVelocity[i] = EC_READ_S32(domainPtr + offActualVelocity[i]);
+        }
+
+        if(offActualTorque[i] != maxByteOffset)
+        {
+            receivedata.actualTorque[i] = EC_READ_S16(domainPtr + offActualTorque[i]);
+        }
+
+        if(offActualModeOP[i] != maxByteOffset)
+        {
+            receivedata.actualOperationMode[i] = EC_READ_U8(domainPtr + offActualModeOP[i]);
+        }
     }
 }
 
@@ -374,16 +454,123 @@ void EthercatMaster::refreshStata(stateData_t &state)
 
 }
 
+void EthercatMaster::receive() 
+{
+    ecrt_master_receive(master);
+    ecrt_domain_process(domain);
+    ec_domain_state_t domainState;
+    ecrt_domain_state(domain, &domainState);
+
+    state.isEnable = true;
+    for (int i = 0; i < nSlaves; i++)
+    {
+        if(offSatesWord[i] != maxByteOffset)
+        {
+            recvData.statusWrod[i] = EC_READ_U16(domainPtr + offSatesWord[i]);
+        }
+//        state.isEnable = state.isEnable && ((recvData.statusWrod[i] & 0x006f) == 0x0027);
+        state.isEnable = state.isEnable && ((recvData.statusWrod[0] & 0x006f) == 0x0027);
+
+        if(offActualPosition[i] != maxByteOffset)
+        {
+            recvData.actualPosition[i] = EC_READ_S32(domainPtr + offActualPosition[i]);
+        }
+
+        if(offActualVelocity[i] != maxByteOffset)
+        {
+            recvData.actualVelocity[i] = EC_READ_S32(domainPtr + offActualVelocity[i]);
+        }
+
+        if(offActualTorque[i] != maxByteOffset)
+        {
+            recvData.actualTorque[i] = EC_READ_S16(domainPtr + offActualTorque[i]);
+        }
+
+        if(offActualModeOP[i] != maxByteOffset)
+        {
+            recvData.actualOperationMode[i] = EC_READ_U8(domainPtr + offActualModeOP[i]);
+        }
+    }
+
+    ec_domain_state_t ds;
+    ecrt_domain_state(domain, &ds);
+
+    ec_master_state_t ms;
+    ecrt_master_state(master, &ms);
+
+    state.al_states = ms.al_states;
+    state.link_up = ms.link_up;
+    state.slaves_responding = ms.slaves_responding;
+
+    state.WKC = ds.working_counter;
+    state.WC_state = ds.wc_state;
+    state.redundancy_active = ds.redundancy_active;
+}
+
 
 void EthercatMaster::sendData(const targetData_t &targetData)
 {
+
     for (int i = 0; i < nSlaves; i++)
     {
-        EC_WRITE_U16(domainPtr + offControlWord[i], targetData.controlWord[i]);
-        EC_WRITE_S32(domainPtr + offTargetPosition[i], targetData.targetPosition[i]);
-        // EC_WRITE_S32(domainPtr + offTargetVelocity[i], targetData.targetVelocity[i]);
-        // EC_WRITE_S16(domainPtr + offTargetTorque[i], targetData.targetTorque[i]);
-        // EC_WRITE_U8(domainPtr + offTargetModeOP[i], targetData.targetOperationMode[i]);
+        if(offControlWord[i] != maxByteOffset)
+        {
+            EC_WRITE_U16(domainPtr + offControlWord[i], targetData.controlWord[i]);
+        }
+
+        if(offTargetPosition[i] != maxByteOffset)
+        {
+            EC_WRITE_S32(domainPtr + offTargetPosition[i], targetData.targetPosition[i]);
+        }
+
+        if(offTargetVelocity[i] != maxByteOffset)
+        {
+            EC_WRITE_S32(domainPtr + offTargetVelocity[i], targetData.targetVelocity[i]);
+        }
+
+        if(offTargetTorque[i] != maxByteOffset)
+        {
+            EC_WRITE_S16(domainPtr + offTargetTorque[i], targetData.targetTorque[i]);
+        }
+
+        if(offTargetModeOP[i] != maxByteOffset)
+        {
+            EC_WRITE_U8(domainPtr + offTargetModeOP[i], targetData.targetOperationMode[i]);
+        }
+
+    }
+    ecrt_domain_queue(domain);
+    ecrt_master_send(master);
+}
+
+void EthercatMaster::send() 
+{
+    for (int i = 0; i < nSlaves; i++)
+    {
+        if(offControlWord[i] != maxByteOffset)
+        {
+            EC_WRITE_U16(domainPtr + offControlWord[i], targData.controlWord[i]);
+        }
+
+        if(offTargetPosition[i] != maxByteOffset)
+        {
+            EC_WRITE_S32(domainPtr + offTargetPosition[i], targData.targetPosition[i]);
+        }
+
+        if(offTargetVelocity[i] != maxByteOffset)
+        {
+            EC_WRITE_S32(domainPtr + offTargetVelocity[i], targData.targetVelocity[i]);
+        }
+
+        if(offTargetTorque[i] != maxByteOffset)
+        {
+            EC_WRITE_S16(domainPtr + offTargetTorque[i], targData.targetTorque[i]);
+        }
+
+        if(offTargetModeOP[i] != maxByteOffset)
+        {
+            EC_WRITE_U8(domainPtr + offTargetModeOP[i], targData.targetOperationMode[i]);
+        }
     }
     ecrt_domain_queue(domain);
     ecrt_master_send(master);
@@ -393,6 +580,39 @@ void EthercatMaster::sync(uint64_t time)
 {
     ecrt_master_sync_reference_clock_to(master, time);
     ecrt_master_sync_slave_clocks(master);
+}
+
+void EthercatMaster::resetSlaveFault() 
+{
+    for (unsigned int i = 0; i < nSlaves; i++)
+    {
+        targData.controlWord[i] = 0x0080;
+    }
+}
+
+void EthercatMaster::enableSlave() 
+{
+    for (unsigned int i = 0; i < 6; i++)
+    {
+        if ((recvData.statusWrod[i] & 0x006f) == 0x0027) // opreation enable
+        {
+            
+        }
+        else if( (recvData.statusWrod[i] & 0x004f) == 0x0040  ) //switch on disable
+            targData.controlWord[i] =  0x0006;
+        else if( (recvData.statusWrod[i] & 0x006f) == 0x0021  ) // read to switch on
+            targData.controlWord[i] = 0x0007;
+        else if( (recvData.statusWrod[i] & 0x006f) == 0x0023  )   //switch on enable
+            targData.controlWord[i] = 0x000F;
+    } 
+}
+
+void EthercatMaster::shutDownSlave() 
+{
+    for (unsigned int i = 0; i < 6; i++)
+    {
+        targData.controlWord[i] = 0x0006;
+    }
 }
 
 void EthercatMaster::clear() 
@@ -421,18 +641,19 @@ void EthercatMaster::clear()
     delete[] offTargetVelocity;
     delete[] offTargetTorque;
     delete[] offTargetModeOP;
-    delete[] offDummyByte1;
-    delete[] TouchProbeFunc;
+    delete[] offTouchProbeFunc;
     delete[] offSatesWord;
     delete[] offActualPosition;
     delete[] offActualVelocity;
     delete[] offActualTorque;
     delete[] offActualModeOP;
-    delete[] offBummyByte2;
     delete[] offFollowError;
     delete[] offDigitalInputs;
     delete[] offTouchProbeSatte;
     delete[] offTouchProbePos1;
+
+    delete[] offByte1;
+    delete[] offByte2;
 
     offControlWord = nullptr;
     offTargetPosition = nullptr;
@@ -440,17 +661,18 @@ void EthercatMaster::clear()
     offTargetTorque = nullptr;
     offTargetModeOP = nullptr;
     offDummyByte1 = nullptr;
-    TouchProbeFunc = nullptr;
+    offTouchProbeFunc = nullptr;
     offSatesWord = nullptr;
     offActualPosition = nullptr;
     offActualVelocity = nullptr;
     offActualTorque = nullptr;
     offActualModeOP = nullptr;
-    offBummyByte2 = nullptr;
+    offDummyByte2 = nullptr;
     offFollowError = nullptr;
     offDigitalInputs = nullptr;
     offTouchProbeSatte = nullptr;
     offTouchProbePos1 = nullptr;
 
+    offByte1 = nullptr;
+    offByte2 = nullptr;
 }
-

@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
     mGraph1[5]->setPen(QPen(QColor(255, 0, 255)));   // purple, magenta
 
     ifstream if1;		//
-    if1.open("data.txt");//
+    if1.open("dataPos.txt");//
     QVector<double> incVec[6], incNum[6];
     double inc[6];
     int num = 0;
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     mGraph2[5]->setPen(QPen(QColor(255, 0, 255)));   // purple, magenta
 
     ifstream if2;
-    if2.open("angles.txt");
+    if2.open("dataVel.txt");
     QVector<double> anglesVec[6], anglesNum[6];
     double angle[6];
     num = 0;

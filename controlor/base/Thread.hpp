@@ -7,7 +7,6 @@
 class Thread
 {
 private:
-	pthread_t threadId;
 	char name[24];
 	pthread_attr_t attr;
 	struct sched_param param;
@@ -15,6 +14,7 @@ private:
 	static void *threadFunc(void *arg);
 
 protected:
+	pthread_t threadId;
 	// int m_iThreadStatus;
 	// void * m_vpParameter;
 	virtual void run() = 0;

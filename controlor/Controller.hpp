@@ -20,6 +20,7 @@ class Controller : public Thread
 
 	public:
 		Controller(int freq);
+        EthercatMaster * getMaster();
 		~Controller();
 };
 #endif // __CONTROLLER_H__

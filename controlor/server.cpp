@@ -1,11 +1,14 @@
 #include "server.hpp"
 #include <mutex>
 #include <stdio.h>
+#include "commu/TeachViewData.hpp"
 
 using std::mutex;
 
+server_sendData_t Server::sendData = {0};
+server_recvData_t Server::recvData = {0};
 
-void *to_uiclient(void *data)
+void * Server::to_uiclient(void *data)
 {
     printf("\n");
     printf("\n");
@@ -13,7 +16,7 @@ void *to_uiclient(void *data)
     printf("\n");
     printf("\n");
     printf("Hello\n");
-    mutex mtx;
+//    mutex mtx;
 
 //    Server *myServer = (Server *)data;
     //myServer->receiveData.init();
@@ -21,7 +24,6 @@ void *to_uiclient(void *data)
     int client_sockfd = *(int *)data;
     printf("socketfd: %d\n", client_sockfd);
 
-    receiveData_t axis_wdata = {0};
     //axis_wdata.actualPosition[0] = 0;
 
 
@@ -40,9 +42,11 @@ void *to_uiclient(void *data)
 //        //return;
 //    }
 
+    server_recvData_t recvTemp;
+
     while (1)
     {
-        usleep(10000);
+//        usleep(10000);
 
 
         /*
@@ -50,18 +54,21 @@ void *to_uiclient(void *data)
          */
         //mtx.lock();
 #if 1
-        axis_wdata = ReceiveData::getData();
+
+        read(client_sockfd, (char *)&recvTemp, sizeof(recvData));
+        if(1 == recvTemp.client_id)
+        {
+            recvData = recvTemp;
+        }
+
 //        printf("axis_wdata.actualPosition[4] = %d\n", axis_wdata.actualPosition[4]);
         //printf("%d : actpos = %d\t\n", client_sockfd, axis_wdata.actualposition);
 //        axis_wdata.actualPosition[4] = -1;
 //        axis_wdata.actualPosition[5] = -2;
         //mtx.unlock();
-        for(int i=0; i<6; i++)
-        {
-//            printf("%d : %d: actpos = %d\t\n", client_sockfd, i, axis_wdata.actualPosition[i]);
-        }
 
-        int d = write(client_sockfd, (char *)&axis_wdata, sizeof(axis_wdata));
+        write(client_sockfd, (char *)&sendData, sizeof(sendData));
+
         //axis_wdata.actualPosition[0]++;
         //printf("%d server send\n", d);
         //printf("axis_wdata.actualPosition[0] = %d\n", axis_wdata.actualPosition[0]);
@@ -120,8 +127,8 @@ Server::Server(int freq, int portnum) : Thread("Server", 80),
                                         frequency(freq),
                                         port(portnum)
 {
-    printf("Socket server has been created./n");
-    axis_wdata = {0, 0, 0, 0, 0, 0};
+    printf("Socket server has been created/n");
+//    axis_wdata = {0, 0, 0, 0, 0, 0};
 }
 
 Server::~Server()
@@ -151,6 +158,8 @@ void Server::run()
     //targetData.init();
     //statData.init();
 
+    int i = 0;
+
     while (isRun)
     {
         usleep(100);
@@ -171,61 +180,60 @@ void Server::run()
         //then create a new SocketToUi thread
         printf("A new client connected.\n");
 
-        pthread_t toUi;
-        pthread_create(&toUi, NULL, to_uiclient, (void*)&client_sockfd);
+        // pthread_t toUi;
+        pthread_create(ui + i, NULL, to_uiclient, (void *)&client_sockfd);
 
+        //        struct sched_param param3;
+        //        pthread_attr_t attr3;
+        //        pthread_t thread3;
+        //        int ret3;
 
-//        struct sched_param param3;
-//        pthread_attr_t attr3;
-//        pthread_t thread3;
-//        int ret3;
+        //        if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
+        //        {
+        //            perror("mlockall failed");
+        //            return;
+        //        }
 
-//        if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
-//        {
-//            perror("mlockall failed");
-//            return;
-//        }
+        //        ret3 = pthread_attr_init(&attr3);
+        //        if(ret3)
+        //        {
+        //            perror("init pthread attributes failed\n");
+        //            //exit(EXIT_FAILURE);
+        //        }
 
-//        ret3 = pthread_attr_init(&attr3);
-//        if(ret3)
-//        {
-//            perror("init pthread attributes failed\n");
-//            //exit(EXIT_FAILURE);
-//        }
+        //        ret3 = pthread_attr_setstacksize(&attr3, PTHREAD_STACK_MIN);
+        //        if (ret3) {
+        //            printf("pthread setstacksize failed\n");
+        //            goto out;
+        //        }
+        //        ret3 = pthread_attr_setschedpolicy(&attr3, SCHED_FIFO);
+        //        if (ret3) {
+        //            printf("pthread setschedpolicy failed\n");
+        //            goto out;
+        //        }
 
-//        ret3 = pthread_attr_setstacksize(&attr3, PTHREAD_STACK_MIN);
-//        if (ret3) {
-//            printf("pthread setstacksize failed\n");
-//            goto out;
-//        }
-//        ret3 = pthread_attr_setschedpolicy(&attr3, SCHED_FIFO);
-//        if (ret3) {
-//            printf("pthread setschedpolicy failed\n");
-//            goto out;
-//        }
+        //        param3.sched_priority = 90;
+        //        ret3 = pthread_attr_setschedparam(&attr3, &param3);
+        //        if (ret3) {
+        //            printf("pthread setschedparam failed\n");
+        //            goto out;
+        //        }
 
-//        param3.sched_priority = 90;
-//        ret3 = pthread_attr_setschedparam(&attr3, &param3);
-//        if (ret3) {
-//            printf("pthread setschedparam failed\n");
-//            goto out;
-//        }
+        //        ret3 = pthread_attr_setinheritsched(&attr3, PTHREAD_EXPLICIT_SCHED);
+        //        if (ret3) {
+        //            printf("pthread setinheritsched failed\n");
+        //            goto out;
+        //        }
 
-//        ret3 = pthread_attr_setinheritsched(&attr3, PTHREAD_EXPLICIT_SCHED);
-//        if (ret3) {
-//            printf("pthread setinheritsched failed\n");
-//            goto out;
-//        }
-
-//        //ret3 = pthread_create(&thread3, &attr3, to_uiclient, (void *)&(this->client_sockfd));
-//        ret3 = pthread_create(&thread3, &attr3, to_uiclient, (void *)this);
-//        if (ret3) {
-//            printf("create pthread failed\n");
-//            goto out;
-//        }
-//    out:
-//        //close(latency_target_fd);
-//        munlockall();
+        //        //ret3 = pthread_create(&thread3, &attr3, to_uiclient, (void *)&(this->client_sockfd));
+        //        ret3 = pthread_create(&thread3, &attr3, to_uiclient, (void *)this);
+        //        if (ret3) {
+        //            printf("create pthread failed\n");
+        //            goto out;
+        //        }
+        //    out:
+        //        //close(latency_target_fd);
+        //        munlockall();
     }
     //return NULL;
 }
@@ -283,3 +291,17 @@ void Server::run()
 //    //close(latency_target_fd);
 //    munlockall();
 //}
+
+void Server::terminate() 
+{
+    pthread_cancel(ui[0]);
+    pthread_cancel(ui[1]);
+    pthread_cancel(threadId);
+}
+
+void Server::wait() 
+{
+    pthread_join(ui[0], nullptr);
+    pthread_join(ui[1], nullptr);
+    pthread_join(threadId, nullptr);
+}

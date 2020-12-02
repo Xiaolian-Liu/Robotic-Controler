@@ -4,6 +4,9 @@
 #include "commu/PositionQueue.hpp"
 #include <iostream>
 #include <fstream>
+#include "commu/TeachViewData.hpp"
+#include "server.hpp"
+#include "cmath"
 
 // #define MEASURE_TIMING
 #define FILE_OUT
@@ -18,6 +21,11 @@ Controller::Controller(int freq) : Thread("Controller", 98),
                                     master(Time::NANO_PER_SEC/freq,0){
 
 
+}
+
+EthercatMaster * Controller::getMaster() 
+{
+    return &master;
 }
 
 Controller::~Controller()
@@ -43,11 +51,21 @@ void Controller::run()
 #endif // MEASURE_TIMING
 
 #ifdef FILE_OUT
-    ofstream of;
-    of.open("data.txt");
+    ofstream ofPos, ofVel;
+    ofPos.open("dataPos.txt");
+    ofVel.open("dataVel.txt");
 #endif
 
     posQueue.init();
+
+    double acc = 2*pow(2,17);
+    double dec = 20*pow(2,17);
+    double deltaT = 1.0/frequency;
+    double Vmax = 10*pow(2,17);
+
+    int32_t qlast[6];
+    int32_t vnext[6];
+    int32_t qdelta[6];
 
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
     while(isRun)
@@ -86,60 +104,171 @@ void Controller::run()
 #endif
 
 
-        receiveData_t recvdata;
-        stateData_t statedata;
-        master.refreshData(recvdata);
-        master.refreshStata(statedata);
-        ReceiveData::writeData(recvdata);
-        StateData::writeData(statedata);
+        // receiveData_t recvdata;
+        // stateData_t statedata;
+        master.receive();
+
+//        printf("%d\n", master.recvData.actualPosition[0]);
+//        cout << "pos: " << master.recvData.actualPosition[0] << endl;
+//        cout << "vel: " << master.recvData.actualVelocity[0] << endl;
+        for (int i = 0; i < 6; i++)
+        {
+            Server::sendData.actualPosition[i] = master.recvData.actualPosition[i];
+        }
 
         clock_gettime(CLOCK_MONOTONIC, &time);
         master.sync(time.totalNanoSec());
 
-        targetData_t tardata = TargetData::getData();
+        // targetData_t tardata = TargetData::getData();
 //        for (int i = 0; i < 6; i++)
 //        {
 ////            targetData.targetPosition[i] = receiveData.actualPosition[i];
 //            targetData.targetOperationMode[i] = 0x08;
 //        }
 
+
+        // printf("%d\n", Server::recvData.jogButton);
+
+
+         if(master.state.isEnable)
+         {
+             int jogButton = Server::recvData.jogButton;
+             if(jogButton > 0)
+             {
+                 cout << "forward: " << jogButton << endl;
+                 vnext[jogButton - 1] += acc * deltaT;
+                 if(vnext[jogButton - 1] > Vmax)
+                 {
+                     vnext[jogButton - 1] = Vmax;
+                 }
+//                 cout << "vmax: " << Vmax << endl;
+//                 cout << "vnext: " << vnext[jogButton - 1] << endl;
+//                 cout << "vactual: " << master.recvData.actualVelocity[jogButton - 1];
+             }
+             else if(jogButton < 0)
+             {
+                 cout << "backward: " << jogButton << endl;
+                 vnext[jogButton - 1] -= acc * deltaT;
+                 if(vnext[jogButton - 1] < -Vmax)
+                 {
+                     vnext[jogButton - 1] = -Vmax;
+                 }
+             }
+             else
+             {
+                 cout << "stop: " << jogButton << endl;
+                 for (int i = 0; i < 6; i++)
+                 {
+                     vnext[i] -= vnext[i] * dec * deltaT / abs(vnext[i]);
+                     if(abs(vnext[i]) < dec*deltaT)
+                     {
+                         vnext[i] = 0;
+//                         master.recvData.actualVelocity[i] = 0;
+                     }
+                 }
+//                 cout << "actualVelocity: " << master.recvData.actualVelocity[0] << endl;
+//                 cout << "vnext: " << vnext[0] << endl;
+             }
+
+             for (int i = 0; i < 6; i++)
+             {
+//                 master.targData.targetPosition[i] = master.recvData.actualPosition[i]+ (master.recvData.actualVelocity[i] + vnext[i]) * deltaT / 2;
+
+                 master.targData.targetPosition[i] += vnext[i] * deltaT;
+                 qdelta[i] = (master.targData.targetPosition[i] - qlast[i])*frequency;
+                 qlast[i] = master.targData.targetPosition[i];
+
+
+//                 master.targData.targetPosition[i] = master.recvData.actualPosition[i] + vnext[i] * deltaT;
+ //                master.targData.targetPosition[i] = master.recvData.actualPosition[i] + 1000;
+             }
+//             cout << "actualpos: " << master.recvData.actualPosition[0] << endl;
+//             cout << "tarpos: " << master.targData.targetPosition[0] << endl;
+
+ #ifdef FILE_OUT
+             for (int i = 0; i < 3;i++)
+             {
+//                 ofPos << master.recvData.actualPosition[0] << " ";
+//                 ofPos << master.targData.targetPosition[0] << " ";
+
+                 ofVel << qdelta[0] << " ";
+                 ofVel << qdelta[0] << " ";
+
+             }
+//             ofPos << endl;
+             ofVel << endl;
+ #endif
+
+         }
+
+
+         else
+         {
+             for (int i = 0; i < 6; i++)
+             {
+                 master.targData.targetPosition[i] = master.recvData.actualPosition[i];
+                 vnext[i] = master.recvData.actualVelocity[i];
+             }
+         }
+        
+
+
+/*
         incPos_t pos;
         int bytes = posQueue.getPosition(&pos, 500);
         if(bytes == -1)
         {
             for (int i = 0; i < 6; i++)
             {
-                tardata.targetPosition[i] = recvdata.actualPosition[i];
+                master.targData.targetPosition[i] = master.recvData.actualPosition[i];
             }
-        }else
+        }
+        else
         {
             for (int i = 0; i < 6;i++)
             {
-                tardata.targetPosition[i] = pos.targetPosition[i];
+                master.targData.targetPosition[i] = pos.targetPosition[i];
                 // tardata.targetPosition[i] = recvdata.actualPosition[i];
             }
         }
 
+
 #ifdef FILE_OUT
-        if(beEnable)
+
+        for (int i = 0; i < 6; i++)
         {
-            for (int i = 0; i < 6;i++)
-            {
-                of << tardata.targetPosition[i] << " ";
-            }
-            of << endl;
+            ofPos << master.targData.targetPosition[0] << " ";
         }
+        ofPos << endl;
 
 #endif
+
+*/
+ 
+        if(Server::recvData.shutDown)
+        {
+            master.shutDownSlave();
+        }
+
+        if(Server::recvData.enable)
+        {
+            printf("enable\n");
+            master.enableSlave();
+        }
+
+        if(Server::recvData.faultReset)
+        {
+            master.resetSlaveFault();
+        }
+
 
         // cout << "0x" << std::hex << tardata.controlWord[0] << endl;
 //        for (int i = 0; i < 6; i++)
 //        {
 //            tardata.targetPosition[i] = recvdata.actualPosition[i];
 //        }
-        master.sendData(tardata);
-
-
+        // master.sendData(tardata);
+        master.send();
 
         if (counter)
         {

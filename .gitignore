@@ -35,3 +35,4 @@ bin/kinematics
 bin/teachview
 robotics/.vs/robotics/v15/.suo
 *.ipch
+*bin*

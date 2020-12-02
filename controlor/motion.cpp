@@ -10,6 +10,7 @@
 #include "commu/TargetData.hpp"
 #include "commu/PositionQueue.hpp"
 #include "commu/StateData.hpp"
+#include "ecat/EthercatMaster.hpp"
 
 using std::ofstream;
 extern int run;
@@ -242,7 +243,8 @@ int cir(seqJointVec & jangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int 
 
 void * PTP(void *cookie)
 {
-    printf("PTP/n");
+	EthercatMaster *master = (EthercatMaster *)cookie;
+	printf("PTP/n");
 	PositionQueue posqueue;
 	posqueue.init();
 
@@ -250,23 +252,24 @@ void * PTP(void *cookie)
 
 	incpos_t ip0;
 
+
     while(run)
 	{
-		stateData_t sdata = StateData::getData();
-        if (1 == beEnable)
+		// stateData_t sdata = StateData::getData();
+        if (1 == master->state.isEnable)
 		{
 			printf("go to break\n");
 			break;
 		}
-        printf("Enable ID: %d\n", StateData::data.isEnable);
-        printf("Enable ID: %d\n", beEnable);
-		sleep(2);
+        // printf("Enable ID: %d\n", StateData::data.isEnable);
+        // printf("Enable ID: %d\n", beEnable);
+        sleep(1);
 	}
-	
-	receiveData_t rdata = ReceiveData::getData();
+
+	// receiveData_t rdata = ReceiveData::getData();
 	for (int i = 0; i < 6; i++)
 	{
-		ip0.inc[i] = rdata.actualPosition[i];
+		ip0.inc[i] = master->recvData.actualPosition[i];
 		printf("ip0.inc[%d] = %d\n", i, ip0.inc[i]);
 	}
 
@@ -283,7 +286,14 @@ void * PTP(void *cookie)
     joinpos_t ijhome = {{0, 0, 0, 0, 0, 0}};
 	JointVec vijhome;
     vijhome << 0, 0, 0, 0, -90, 0;
-    ptp(angles, vij0, vijhome, 5, 10,200);
+
+	JointVec vij1;
+	JointVec Delta;
+	Delta << 30, -30, 0, 180, -120, 0;
+	vij1 = vij0 + Delta;
+	// ptp(angles, vij0, vijhome, 5, 10, 200);
+	ptp(angles, vij0, vij1, 2, 5, 200);
+
 
 	ofstream of;		//
 	of.open("angles.txt");//
@@ -304,11 +314,31 @@ void * PTP(void *cookie)
 		}
 		posqueue.sendPosition(iP);
 	}
-	std::cout << "ptp:j0->jhome succeed!\n";
+	std::cout << "ptp:j0->j1 succeed!\n";
 
-	// if(ptp(ij0, ijhome, 30, 15) < 0){
-	// 	printf("PTP function failed\n");
-	// }
+	ptp(angles, vij1, vij0, 2, 3, 200);
+	for(size_t i=0; i<angles.size(); i++)
+	{
+		for (int j = 0; j < 6; j++)//
+		{
+			of << angles[i][j] << " ";
+		}
+		of << std::endl;//
+
+		DriveVec ip = Joint2Drive(angles[i]);
+		incPos_t iP;
+		for(int j=0; j<6; j++)
+		{
+			iP.targetPosition[j] = ip[j];
+		}
+		posqueue.sendPosition(iP);
+	}
+	std::cout << "ptp:j0->j1 succeed!\n";
+	return NULL;
+
+
+
+
 
 	joinpos_t jps;
 	cartpos_t cps;

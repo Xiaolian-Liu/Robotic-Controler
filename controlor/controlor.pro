@@ -13,6 +13,7 @@ SOURCES += \
     commu/ReceiveData.cpp \
     commu/StateData.cpp \
     commu/TargetData.cpp \
+    commu/TeachViewData.cpp \
     ecat/EthercatMaster.cpp \
     ecat/Slave.cpp \
     kinematics/circle.cpp \
@@ -25,6 +26,7 @@ SOURCES += \
     main.cpp \
     motion.cpp \
     server.cpp
+
 
 
 include(deployment.pri)
@@ -40,6 +42,7 @@ HEADERS += \
     commu/ReceiveData.hpp \
     commu/StateData.hpp \
     commu/TargetData.hpp \
+    commu/TeachViewData.hpp \
     ecat/EthercatMaster.hpp \
     ecat/Slave.hpp \
     kinematics/circle.h \
@@ -51,6 +54,7 @@ HEADERS += \
     drive.h \
     motion.h \
     server.hpp
+
 
 INCLUDEPATH += /home/vito/Robotic-Controler/include
 

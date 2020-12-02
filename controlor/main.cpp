@@ -47,6 +47,7 @@
 #include "drive.h"
 #include "motion.h"
 #include "server.hpp"
+#include "base/ThreadTest.hpp"
 
 using namespace std;
 
@@ -91,30 +92,40 @@ int main()
     signal(SIGINT, signal_stop);
     signal(SIGTERM, signal_stop);
 
-    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1){
-        printf("mlockall failed: %m\n");
-        exit(-2);
-    }
+//    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1){
+//        printf("mlockall failed: %m\n");
+//        exit(-2);
+//    }
 
     set_latency_target();
 
     Controller control(200);
     control.start();
 
+//    sleep(10);
+
     Server server(200, 9734);
     server.start();
 
-    pthread_t pdrive;
-    pthread_t pmotion;
+//    pthread_t pdrive;
+//    pthread_t pmotion;
 //    pthread_create(&pdrive, NULL, driveinit, NULL);
-    driveinit(nullptr);
-//    sleep(10);
-    int resp = pthread_create(&pmotion, NULL, PTP, NULL);
-    if(resp != 0)
-    {
-        perror("thread creat failed: ");
-    }
+////    driveinit(nullptr);
+////    sleep(10);
+//    int resp = pthread_create(&pmotion, NULL, PTP, NULL);
+//    if(resp != 0)
+//    {
+//        perror("thread creat failed: ");
+//    }
 
+
+    sleep(10);
+    PTP(control.getMaster());
+//    ThreadTest test1;
+//    ThreadTest test2;
+
+//    test1.start();
+//    test2.start();
 
     while (run)
     {
@@ -124,9 +135,14 @@ int main()
     control.quit();
     control.wait();
 
-    server.quit();
-    server.wait();
+//    server.quit();
+//    server.terminate();
+//    server.wait();
 
+//    test1.quit();
+//    test2.quit();
+//    test1.wait();
+//    test2.wait();
     /*
 
     struct sched_param param;
@@ -175,11 +191,11 @@ int main()
         }
 */
 
-    pthread_join(pdrive, NULL);
-    pthread_join(pmotion, NULL);
+//    pthread_join(pdrive, NULL);
+//    pthread_join(pmotion, NULL);
     
     close(latency_target_fd);
-    munlockall();
+//    munlockall();
     cout << "Hello World!" << endl;
     return 0;
 }
