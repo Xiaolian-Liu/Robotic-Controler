@@ -144,9 +144,33 @@ joinpos_t increment2jointangle(const incpos_t & in)
 	joinpos_t p;
 	for(int i=0; i<5; i++)
 	{
-		p.joi[i] = (in.inc[i] - incoff[i])*360/( (1<<BITS)*ratio[i] );
+		p.joi[i] = (in.inc[i] - incoff[i])*360.0/( (1<<BITS)*ratio[i] );
 	}
-	p.joi[5] = (in.inc[5]-incoff[5])*360/( (1<<BITS)*ratio[5] ) + p.joi[4]/ratio56;
+	p.joi[5] = (in.inc[5]-incoff[5])*360.0/( (1<<BITS)*ratio[5] ) + p.joi[4]/ratio56;
+	return p;
+}
+
+JointVec increment2jointangle(const int32_t *in) 
+{
+	JointVec p;
+	for(int i=0; i<5; i++)
+	{
+		p[i] = (in[i] - incoff[i])*360.0/( (1<<BITS)*ratio[i] );
+	}
+	p[5] = (in[5]-incoff[5])*360.0/( (1<<BITS)*ratio[5] ) + p[4]/ratio56;
+	// cout << "in[0]: " << in[0] << endl;
+	// cout << "p[0]: " << p[0] << endl;
+	return p;
+}
+
+JointVec increVel2jointVel(const int32_t *in) 
+{
+	JointVec p;
+	for(int i=0; i<5; i++)
+	{
+		p[i] = in[i]*360/( (1<<BITS)*ratio[i] );
+	}
+	p[5] = in[5]*360/( (1<<BITS)*ratio[5] ) + p[4]/ratio56;
 	return p;
 }
 
@@ -159,6 +183,15 @@ incpos_t jointangle2increment(const joinpos_t & jo)
 	}
 	p.inc[5] = (jo.joi[5] - jo.joi[4]/ratio56)*(1<<BITS)*ratio[5]/360 + incoff[5];
 	return p;
+}
+
+void jointangle2increment(int32_t *inc, const JointVec &joi) 
+{
+	for(int i=0; i<5; i++)
+	{
+		inc[i] = joi[i]*(1<<BITS)*ratio[i]/360 + incoff[i];
+	}
+	inc[5] = (joi[5] - joi[4]/ratio56)*(1<<BITS)*ratio[5]/360 + incoff[5];
 }
 
 JointVec Drive2Joint(DriveVec d)

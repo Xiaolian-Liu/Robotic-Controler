@@ -11,6 +11,7 @@
 #include "commu/PositionQueue.hpp"
 #include "commu/StateData.hpp"
 #include "ecat/EthercatMaster.hpp"
+#include "server.hpp"
 
 using std::ofstream;
 extern int run;
@@ -243,6 +244,17 @@ int cir(seqJointVec & jangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int 
 
 void * PTP(void *cookie)
 {
+	while(run)
+	{
+		if(Server::commandQueue.size() > 0)
+		{
+			motionCommand comm = Server::commandQueue.front();
+			Server::commandQueue.pop();
+			Server::printMotionCommand(&comm);
+		}
+		usleep(500);
+	}
+
 	EthercatMaster *master = (EthercatMaster *)cookie;
 	printf("PTP/n");
 	PositionQueue posqueue;

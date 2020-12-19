@@ -6,7 +6,8 @@
 using std::mutex;
 
 server_sendData_t Server::sendData = {0};
-server_recvData_t Server::recvData = {0};
+server_recvData_t Server::recvData = {};
+queue<motionCommand> Server::commandQueue;
 
 void * Server::to_uiclient(void *data)
 {
@@ -59,6 +60,15 @@ void * Server::to_uiclient(void *data)
         if(1 == recvTemp.client_id)
         {
             recvData = recvTemp;
+        }
+        if(recvData.motionCommandSize > 0)
+        {
+            for (int i = 0; i < recvData.motionCommandSize; i++)
+            {
+                motionCommand command;
+                read(client_sockfd, (char *)&command, sizeof(command));
+                commandQueue.push(command);
+            }
         }
 
 //        printf("axis_wdata.actualPosition[4] = %d\n", axis_wdata.actualPosition[4]);
@@ -117,6 +127,37 @@ void * Server::to_uiclient(void *data)
     return NULL;
 }
 
+void Server::printMotionCommand(motionCommand * m)
+{
+    string str;
+    switch (m->mode)
+    {
+    case 0:
+        str = "PTP";
+        break;
+    case 1:
+        str = "Lin";
+        break;
+    case 2:
+        str = "Cir";
+        break;
+    default:
+        break;
+    }
+    printf("MotionType:  %s\n", str.c_str());
+    printf("MiddlePos:   %f  %f  %f  %f  %f  %f\n",
+     m->PosMid[0], m->PosMid[1], m->PosMid[2],
+     m->PosMid[3], m->PosMid[4], m->PosMid[5]);
+
+    printf("FinalPos:    %lf  %lf  %lf  %lf  %lf  %lf\n",
+     m->PosFin[0], m->PosFin[1], m->PosFin[2],
+     m->PosFin[3], m->PosFin[4], m->PosFin[5]);
+
+    printf("Vel Percent: %d\n", m->velPercent);
+
+    printf("Acc Percent: %d\n", m->accPercent);
+
+}
 
 Server::Server()
 {

@@ -86,12 +86,12 @@ using std::vector;
 #define ER20_J6	0.8
 
 // The incremental offset
-#define INCOFF1		-444828
-#define INCOFF2 	-151240
-#define INCOFF3		16557
-#define INCOFF4		-8990
-#define INCOFF5		147800
-#define INCOFF6		18150
+#define INCOFF1		79744
+#define INCOFF2 	1184
+#define INCOFF3		67868
+#define INCOFF4		91334
+#define INCOFF5		43701
+#define INCOFF6		5408
 
 // The bits of encoders in the momotor
 #define BITS 	17
@@ -205,7 +205,10 @@ JointVec DH2Joint(DHsysVec);
  * 	The transformation between incremental and jointangle
  * **********************************************************************/
 joinpos_t increment2jointangle(const incpos_t & in);
-incpos_t jointangle2increment(const joinpos_t & jo);
+JointVec increment2jointangle(const int32_t *in);
+JointVec increVel2jointVel(const int32_t *in);
+incpos_t jointangle2increment(const joinpos_t &jo);
+void jointangle2increment(int32_t *inc, const JointVec &jo);
 
 JointVec Drive2Joint(DriveVec);
 DriveVec Joint2Drive(JointVec);

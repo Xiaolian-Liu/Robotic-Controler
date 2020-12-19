@@ -1,6 +1,7 @@
 #include "ReadPipeThread.h"
 #include <fstream>
 #include <er20.h>
+#define FIFO_NAME "/tmp/my_fifo"
 
 QVector<double> tarposition[6];
 QVector<double> runtime;
@@ -31,7 +32,7 @@ ReadpipeThread::~ReadpipeThread()
 
 void ReadpipeThread::run()
 {
-    pipe_fd = open("/dev/rtp0",O_RDWR);/* open will block until the file can't be opened */
+    pipe_fd = open(FIFO_NAME,O_RDONLY);/* open will block until the file can't be opened */
     if(pipe_fd < 0){
         perror("pipe open fail");
     }/* open will block until the file can be opened */
@@ -48,20 +49,25 @@ void ReadpipeThread::run()
             perror("pipe read fail");
             break;
         }
-        for(int i=0; i<6; i++){
-            inctarpos.inc[i] = data.TargetPosition[i];
+        else
+        {
+            for(int i=0; i<6; i++){
+//                inctarpos.inc[i] = data.tarpos[i];
+                joitarpos.joi[i] = data.joiangles[i];
+            }
+//            joitarpos = increment2jointangle(inctarpos);
+            datacount++;
+            posMut.lock();
+            for(int i=0; i<6; i++){
+                // pos.update(data.TargetPosition);
+                tarposition[i].push_back(double(joitarpos.joi[i]));
+    //            dataout << data.TargetPosition[i] << '\t';
+            }
+    //        dataout << std::endl;
+            runtime.push_back(datacount*5);
+            posMut.unlock();        // emit Readsucceed(pos);
         }
-        joitarpos = increment2jointangle(inctarpos);
-        datacount++;
-        posMut.lock();
-        for(int i=0; i<6; i++){
-            // pos.update(data.TargetPosition);
-            tarposition[i].push_back(double(joitarpos.joi[i]));
-//            dataout << data.TargetPosition[i] << '\t';
-        }
-//        dataout << std::endl;
-        runtime.push_back(datacount/2000.0);
-        posMut.unlock();        // emit Readsucceed(pos);
+
     }
 }
 

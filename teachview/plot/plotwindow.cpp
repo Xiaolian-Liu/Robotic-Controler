@@ -81,7 +81,7 @@ void PlotWindow::timerSlot()
         posMut.unlock();
         // make key axis range scroll with the data:
         mPlot->xAxis->rescale();
-        mPlot->xAxis->setRange(mPlot->xAxis->range().upper, 3000, Qt::AlignRight);
+        mPlot->xAxis->setRange(mPlot->xAxis->range().upper, 10000, Qt::AlignRight);
 //        for(int i=0; i<6; i++)
 //        {
 //            mGraph[i]->rescaleValueAxis(false, true);
@@ -94,7 +94,7 @@ void PlotWindow::timerSlot()
         mGraph[axisi]->setData(runtime, tarposition[axisi], true);
         posMut.unlock();
         mPlot->xAxis->rescale();
-        mPlot->xAxis->setRange(mPlot->xAxis->range().upper, 3000, Qt::AlignRight);
+        mPlot->xAxis->setRange(mPlot->xAxis->range().upper, 10000, Qt::AlignRight);
         mGraph[axisi]->rescaleValueAxis(false, true);
     }
 

@@ -161,10 +161,10 @@ int EthercatMaster::init()
     }
     
 
-    for (unsigned int i = 0; i < nSlaves; i++)
-    {
-        cout << slave[i] << endl;
-    }
+    // for (unsigned int i = 0; i < nSlaves; i++)
+    // {
+    //     cout << slave[i] << endl;
+    // }
 
     offControlWord = new unsigned int[nSlaves];
     offTargetPosition = new unsigned int[nSlaves];
@@ -462,6 +462,7 @@ void EthercatMaster::receive()
     ecrt_domain_state(domain, &domainState);
 
     state.isEnable = true;
+    state.isErrExist = false;
     for (int i = 0; i < nSlaves; i++)
     {
         if(offSatesWord[i] != maxByteOffset)
@@ -469,7 +470,8 @@ void EthercatMaster::receive()
             recvData.statusWrod[i] = EC_READ_U16(domainPtr + offSatesWord[i]);
         }
 //        state.isEnable = state.isEnable && ((recvData.statusWrod[i] & 0x006f) == 0x0027);
-        state.isEnable = state.isEnable && ((recvData.statusWrod[0] & 0x006f) == 0x0027);
+        state.isEnable = state.isEnable && ((recvData.statusWrod[i] & 0x006f) == 0x0027);
+        state.isErrExist = state.isErrExist || ((recvData.statusWrod[i] & 0x0008) == 0x0008);
 
         if(offActualPosition[i] != maxByteOffset)
         {

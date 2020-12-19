@@ -16,18 +16,8 @@
 #define NUMSL   6
 typedef struct
 {
-    uint16_t    ControlWord[NUMSL];
-    int32_t     TargetPosition[NUMSL];
-    int32_t     TargetVelocity[NUMSL];
-    int16_t     TargetTorque[NUMSL];
-    int8_t      ModeOperation[NUMSL];
-
-    uint16_t    StatusWord[NUMSL];
-    int32_t     ActualPosition[NUMSL];
-    int32_t     ActualVelocity[NUMSL];
-    int16_t     ActualTorque[NUMSL];
-    int8_t      CurrentMode[NUMSL];
-    int32_t     ActualFollowErr[NUMSL];
+    int32_t tarpos[6];
+    double joiangles[6];
     
 }driverdata_t;
 

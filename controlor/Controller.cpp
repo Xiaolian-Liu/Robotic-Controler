@@ -7,10 +7,37 @@
 #include "commu/TeachViewData.hpp"
 #include "server.hpp"
 #include "cmath"
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#define FIFO_NAME "/tmp/my_fifo"
+
+
+
+const double qMax[6] =
+    {
+        90,
+        64,
+        165,
+        178,
+        132,
+        180
+    };
+
+const double qMin[6] =
+    {
+        -90,
+        -142,
+        -73,
+        -178,
+        -132,
+        -180
+    };
 
 // #define MEASURE_TIMING
 #define FILE_OUT
 #define POSITION_QUEUE
+#define FIFO_OUT
 using std::cout;
 using std::endl;
 using std::ofstream;
@@ -34,11 +61,12 @@ Controller::~Controller()
 }
 void Controller::run() 
 {
-    if(-1 == master.init()){
-        cout << "controller init master failed" << endl;
+    if(-1 == init())
+    {
         exit();
     }
     master.active();
+
     int counter = 0;
     Time wakeupTime, time;
 
@@ -55,27 +83,6 @@ void Controller::run()
     ofPos.open("dataPos.txt");
     ofVel.open("dataVel.txt");
 #endif
-
-    posQueue.init();
-
-    // double acc = 0.5*pow(2,17);
-    // double dec = 1*pow(2,17);
-    // double deltaT = 1.0/frequency;
-    // double Vmax = 1*pow(2,17);
-
-    // int32_t x0;
-    // unsigned long n1 = (Vmax/acc)*frequency;
-    // int32_t x1 = x0 + (Vmax*Vmax)/(2*acc);
-    // u_int64_t n = 0;
-
-    // int32_t qlast[6];
-    // int32_t vnext[6];
-    // int32_t qdelta[6];
-
-    for(int i = 0; i < 6; i++)
-    {
-        master.recvData.actualPosition[i] = 0;
-    }
 
 
     clock_gettime(CLOCK_MONOTONIC, &wakeupTime);
@@ -114,205 +121,67 @@ void Controller::run()
         }
 #endif
 
-
-        // receiveData_t recvdata;
-        // stateData_t statedata;
         master.receive();
+        clock_gettime(CLOCK_MONOTONIC, &time);
+        master.sync(time.totalNanoSec());
 
-//        printf("%d\n", master.recvData.actualPosition[0]);
-//        cout << "pos: " << master.recvData.actualPosition[0] << endl;
-//        cout << "vel: " << master.recvData.actualVelocity[0] << endl;
+        switch (state)
+        {
+
+        case Error:
+            error();
+            break;
+
+        case Inactive:
+            inactive();
+            break;
+
+        case Active:
+            active();
+            break;
+
+        case Moving:
+            switch (Server::recvData.motionMode)
+            {
+            case ManualJoint:
+                jogJoint();
+                break;
+
+            case Auto:
+                autoMoving();
+                break;
+
+            default:
+                break;
+            }
+            break;
+
+        default:
+            break;
+        }
+        
+        if(master.state.isErrExist)
+        {
+            state = Error;
+        }
+
+
+
+
+        master.send();
         for (int i = 0; i < 6; i++)
         {
             Server::sendData.actualPosition[i] = master.recvData.actualPosition[i];
         }
-
-        clock_gettime(CLOCK_MONOTONIC, &time);
-        master.sync(time.totalNanoSec());
-
-        // targetData_t tardata = TargetData::getData();
-//        for (int i = 0; i < 6; i++)
-//        {
-////            targetData.targetPosition[i] = receiveData.actualPosition[i];
-//            targetData.targetOperationMode[i] = 0x08;
-//        }
-
-
-        // printf("%d\n", Server::recvData.jogButton);
-
-/*
-         if(master.state.isEnable)
-         {
-             int jogButton = Server::recvData.jogButton;
-             if(jogButton > 0)
-             {
-                 cout << "forward: " << jogButton << endl;
-                 vnext[jogButton - 1] += acc * deltaT;
-                 if(vnext[jogButton - 1] > Vmax)
-                 {
-                     vnext[jogButton - 1] = Vmax;
-                 }
-//                 cout << "vmax: " << Vmax << endl;
-//                 cout << "vnext: " << vnext[jogButton - 1] << endl;
-//                 cout << "vactual: " << master.recvData.actualVelocity[jogButton - 1];
-             }
-             else if(jogButton < 0)
-             {
-                 cout << "backward: " << jogButton << endl;
-                 vnext[jogButton - 1] -= acc * deltaT;
-                 if(vnext[jogButton - 1] < -Vmax)
-                 {
-                     vnext[jogButton - 1] = -Vmax;
-                 }
-             }
-             else
-             {
-                 cout << "stop: " << jogButton << endl;
-                 for (int i = 0; i < 6; i++)
-                 {
-                     vnext[i] -= vnext[i] * dec * deltaT / abs(vnext[i]);
-                     if(abs(vnext[i]) < dec*deltaT)
-                     {
-                         vnext[i] = 0;
-//                         master.recvData.actualVelocity[i] = 0;
-                     }
-                 }
-//                 cout << "actualVelocity: " << master.recvData.actualVelocity[0] << endl;
-//                 cout << "vnext: " << vnext[0] << endl;
-             }
-
-             for (int i = 0; i < 6; i++)
-             {
-//                 master.targData.targetPosition[i] = master.recvData.actualPosition[i]+ (master.recvData.actualVelocity[i] + vnext[i]) * deltaT / 2;
-
-                 master.targData.targetPosition[i] = master.targData.targetPosition[i] + vnext[i] * deltaT;
-                 qdelta[i] = (master.targData.targetPosition[i] - qlast[i])*frequency;
-                 qlast[i] = master.targData.targetPosition[i];
-
-
-//                 master.targData.targetPosition[i] = master.recvData.actualPosition[i] + vnext[i] * deltaT;
- //                master.targData.targetPosition[i] = master.recvData.actualPosition[i] + 1000;
-             }
-//             cout << "actualpos: " << master.recvData.actualPosition[0] << endl;
-//             cout << "tarpos: " << master.targData.targetPosition[0] << endl;
-
-
-         }
-*/
-
-#ifdef MANUAL
-
-         if(master.state.isEnable)
-         {
-             n++;
-             if(n < n1)
-             {
-                 master.targData.targetPosition[0] = x0 + 0.5*acc*(n*deltaT)*(n*deltaT);
-             }
-             else
-             {
-                 master.targData.targetPosition[0] = x1 + Vmax*(n-n1)*deltaT;
-             }
-             cout << "targetPosition: " << master.targData.targetPosition[0] << endl;
-         }
-
-         else
-         {
-             x0 = master.recvData.actualPosition[0];
-             n = 0;
-             x1 = x0 + (Vmax*Vmax)/(2*acc);
-             for (int i = 0; i < 6; i++)
-             {
-                 master.targData.targetPosition[i] = master.recvData.actualPosition[i];
-                 vnext[i] = master.recvData.actualVelocity[i];
-             }
-         }
-
-#endif
-        
-
-#ifdef POSITION_QUEUE
-
-        incPos_t pos;
-        int bytes = posQueue.getPosition(&pos, 500);
-        if(bytes == -1)
-        {
-            for (int i = 0; i < 6; i++)
-            {
-                master.targData.targetPosition[i] = master.recvData.actualPosition[i];
-            }
-        }
-        else
-        {
-            for (int i = 0; i < 6;i++)
-            {
-                master.targData.targetPosition[i] = pos.targetPosition[i];
-                // tardata.targetPosition[i] = recvdata.actualPosition[i];
-            }
-        }
-
-
-
-
-
-
-
-#endif
- 
-        if(Server::recvData.shutDown)
-        {
-            master.shutDownSlave();
-        }
-
-        if(Server::recvData.enable)
-        {
-            printf("enable\n");
-            master.enableSlave();
-        }
-
-        if(Server::recvData.faultReset)
-        {
-            master.resetSlaveFault();
-        }
-
-
-        // cout << "0x" << std::hex << tardata.controlWord[0] << endl;
-//        for (int i = 0; i < 6; i++)
-//        {
-//            tardata.targetPosition[i] = recvdata.actualPosition[i];
-//        }
-        // master.sendData(tardata);
-        master.send();
-
-
-#ifdef FILE_OUT
-
+#ifdef FIFO_OUT
+                fifoData fifodata;
         for (int i = 0; i < 6; i++)
         {
-            ofPos << master.targData.targetPosition[0] << " ";
+            fifodata.tarpos[i] = master.targData.targetPosition[i];
+            fifodata.joiangles[i] = qNext[i];
         }
-        ofPos << endl;
-
+        write(pipe_fd, &fifodata, sizeof(fifoData));
 #endif
-
-        if(master.state.isEnable)
-        {
-
-//#ifdef FILE_OUT
-//            for (int i = 0; i < 3;i++)
-//            {
-//            // ofPos << master.recvData.actualPosition[0] << " ";
-//            ofPos << master.targData.targetPosition[0] << " ";
-//            ofPos << master.targData.targetPosition[0] << " ";
-//            // ofVel << qdelta[0] << " ";
-//            // ofVel << qdelta[0] << " ";
-//            }
-//            ofPos << endl;
-//        // ofVel << endl;
-//#endif
-
-        }
-
         if (counter)
         {
             counter--;
@@ -346,12 +215,211 @@ void Controller::run()
     }
 }
 
+void Controller::error() 
+{
+    if(Server::recvData.faultReset)
+    {
+        cout << "FaultRest" << endl;
+        master.resetSlaveFault();
+    }
+    if(!master.state.isErrExist)
+    {
+        state = Inactive;
+    }
+}
+
+void Controller::inactive() 
+{
+    if(Server::recvData.enable || enableFlag)
+    {
+        master.enableSlave();
+        enableFlag = true;
+    }
+    if(master.state.isEnable)
+    {
+        enableFlag = false;
+        state = Active;
+    }
+    for (int i = 0; i < 6; i++)
+    {
+        master.targData.targetPosition[i] = master.recvData.actualPosition[i];
+    }
+}
+
+void Controller::active() 
+{
+    switch (Server::recvData.motionMode)
+    {
+    case ManualJoint:
+        if(Server::recvData.jogButton != 0)
+        {
+            incpos_t incPos;
+            for (int i = 0; i < 6; i++)
+            {
+                incPos.inc[i] = master.recvData.actualPosition[i];
+            }
+            joinpos_t joiPos = increment2jointangle(incPos);
+            cout << "joiPos: " << joiPos.joi[0] << endl;
+            qNext = increment2jointangle(master.recvData.actualPosition);
+            cout << "actualPosition_: " << master.recvData.actualPosition[0];
+            cout << "qNext_Inactive: " << qNext[0] << endl;
+            vNext = increVel2jointVel(master.recvData.actualVelocity);
+            cout << "vNext_Inactive_Inc: " << master.recvData.actualVelocity[0] << endl;
+            cout << "vNext_Inactive: " << vNext[0] << endl;
+            state = Moving;
+        }
+        else
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                master.targData.targetPosition[i] = master.recvData.actualPosition[i];
+            }
+        }
+        break;
+
+    case Auto:
+        if(Server::recvData.startSignal)
+        {
+            state = Moving;
+        }
+        else
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                master.targData.targetPosition[i] = master.recvData.actualPosition[i];
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+    if(Server::recvData.shutDown)
+    {
+        master.shutDownSlave();
+        state = Inactive;
+    }
+}
+
+void Controller::jogJoint() 
+{
+    int jogButton = Server::recvData.jogButton;
+    int jogIndex = 0;
+    if (jogButton > 0)
+    {
+        jogIndex = jogButton - 1;
+        vLast[jogIndex] = vNext[jogIndex];
+        vNext[jogIndex] += acc * deltaT;
+        if(vNext[jogIndex] > Vmax)
+        {
+            vNext[jogIndex] = Vmax;
+        }
+    }
+    else if(jogButton < 0)
+    {
+        jogIndex = -jogButton - 1;
+        vLast[jogIndex] = vNext[jogIndex];
+        vNext[jogIndex] -= acc * deltaT;
+        if(vNext[jogIndex] < -Vmax)
+        {
+            vNext[jogIndex] = -Vmax;
+        }
+    }
+    else
+    {
+        vLast = vNext;
+        int stopNum = 0;
+        for (int i = 0; i < 6; i++)
+        {
+            vNext[i] -= vNext[i] * dec * deltaT / abs(vNext[i]);
+            if(abs(vNext[i]) < 1.5*dec*deltaT)
+            {
+                vNext[i] = 0;
+                stopNum++;
+            }
+            if(6 == stopNum)
+            {
+                state = Active;
+            }
+        }
+    }
+   
+
+    qNext += 0.5 * deltaT * (vLast + vNext);
+    for (int i = 0; i < 6; i++)
+    {
+        if(qNext[i] > qMax[i]){
+            qNext[i] = qMax[i];
+        }
+        if(qNext[i] < qMin[i]){
+            qNext[i] = qMin[i];
+        }
+    }
+        // cout << "vNext: " << vNext[0] << endl;
+        // cout << "qNext: " << qNext[0] << endl;
+
+    jointangle2increment(master.targData.targetPosition, qNext);
+    // cout << "targetPosition: " << master.targData.targetPosition[0] << endl;
+}
+
+void Controller::autoMoving() 
+{
+    incPos_t pos;
+    int bytes = posQueue.getPosition(&pos, 500);
+    if(bytes == -1)
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            master.targData.targetPosition[i] = master.recvData.actualPosition[i];
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 6;i++)
+        {
+            master.targData.targetPosition[i] = pos.targetPosition[i];
+        }
+    }
+}
+
 int Controller::init() 
 {
     if(-1 == master.init()){
         cout << "controller init master failed" << endl;
-        exit();
+        state = Error;
+        return -1;
     }
-    posQueue.init();
-    
+
+    if(-1 == posQueue.init()){
+        state = Error;
+        cout << "controller init posQueue failed" << endl;
+        return -1;
+    }
+
+    if(!mkfifo(FIFO_NAME, 0664))
+    {
+        perror("fifo make failed: ");
+    }
+    pipe_fd  = open(FIFO_NAME , O_RDWR|O_NONBLOCK); 
+    if(-1 == pipe_fd)
+    {
+        perror("pipe open failed: ");
+    }
+
+    for(int i = 0; i < 6; i++)
+    {
+        master.recvData.actualPosition[i] = 0;
+    }
+
+    Vmax = 10;
+    acc = Vmax/2;
+    dec = Vmax * 2;
+    deltaT = 1.0 / frequency;
+    q << 0, 0, 0, 0, 0, 0;
+    qNext << 0, 0, 0, 0, 0, 0;
+    v << 0, 0, 0, 0, 0, 0;
+    vNext << 0, 0, 0, 0, 0, 0;
+
+    state = Inactive;
+    enableFlag = false;
 }

@@ -9,15 +9,45 @@
 #include "commu/PositionQueue.hpp"
 #include "kinematics/er20.h"
 
+struct fifoData
+{
+	int32_t tarpos[6];
+	double joiangles[6];
+};
+
+
 
 class Controller : public Thread
 {
 	private:
+		enum State
+		{
+			Inactive,
+			Active,
+			Moving,
+			Error
+		};
+		enum MoveMode
+		{
+			ManualJoint = 0,
+			ManualCart = 1,
+			Auto = 2
+		};
+		bool enableFlag;
 		int frequency;
 		int cycleTime;
 		EthercatMaster master;
 		PositionQueue posQueue;
+		State state;
+		MoveMode moveMode;
 		virtual void run();
+		void error();
+		void inactive();
+		void active();
+		void jogJoint();
+		void autoMoving();
+
+		int pipe_fd;
 
 	public:
 		double Vmax;
@@ -28,6 +58,11 @@ class Controller : public Thread
 		JointVec qNext;
 		JointVec v;
 		JointVec vNext;
+		JointVec vLast;
+		JointVec q0;
+		JointVec v0;
+		uint64_t n;
+		uint64_t n1;
 
 		int init();
 		Controller(int freq);

@@ -28,6 +28,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <mutex>
+#include <queue>
 
 
 #include "base/Thread.hpp"
@@ -38,6 +39,7 @@
 #include "commu/PositionQueue.hpp"
 #include "commu/StateData.hpp"
 
+using std::queue;
 
 struct server_sendData_t
 {
@@ -63,6 +65,8 @@ struct server_recvData_t
     int16_t targetTorque[6];
     uint8_t targetOperationMode[6];
 
+    uint8_t motionCommandSize = 0;
+
     bool startSignal;
     bool stopSignal;
     bool enable;
@@ -71,7 +75,7 @@ struct server_recvData_t
 
     int8_t motionMode;  // 0 manual_Joint_Space
                         // 1 manual_Cartesian_Space
-                        // 3 continuous
+                        // 2 continuous
 
     uint8_t velocityPercent;
     uint8_t accelerationPercent;
@@ -90,6 +94,15 @@ struct server_recvData_t
     int32_t ethercatErrorCode[6];
 };
 
+struct motionCommand
+{
+    uint8_t mode;
+    double PosMid[6];
+    double PosFin[6];
+    uint8_t velPercent;
+    uint8_t accPercent;
+};
+
 
 class Server : public Thread
 {
@@ -100,11 +113,13 @@ public:
 
     void terminate();
     void wait();
-
+    
+    static queue<motionCommand> commandQueue;
     static server_sendData_t sendData;
     static server_recvData_t recvData;
     
     static void *to_uiclient(void *data);
+    static void printMotionCommand(motionCommand * m);
 
 private:
     int frequency;
