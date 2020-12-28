@@ -12,6 +12,8 @@
 
 #define FIFO_NAME "/tmp/my_fifo"
 
+// #define ENTITY 
+
 
 
 const double qMax[6] =
@@ -35,9 +37,9 @@ const double qMin[6] =
     };
 
 // #define MEASURE_TIMING
-#define FILE_OUT
+// #define FILE_OUT
 #define POSITION_QUEUE
-#define FIFO_OUT
+// #define FIFO_OUT
 using std::cout;
 using std::endl;
 using std::ofstream;
@@ -65,11 +67,16 @@ void Controller::run()
     {
         exit();
     }
+
+
+#ifdef ENTITY
     master.active();
+#endif
 
     int counter = 0;
     Time wakeupTime, time;
 
+    State lastState = Error;
 #ifdef MEASURE_TIMING
     Time startTime, endTime, lastStartTime;
 	uint32_t period_ns = 0, exec_ns = 0, latency_ns = 0,
@@ -91,7 +98,9 @@ void Controller::run()
         wakeupTime.addNanoSec(cycleTime);
 
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeupTime, NULL);
+#ifdef ENTITY
         master.setApplicationTime(wakeupTime.totalNanoSec());
+#endif
 
 #ifdef MEASURE_TIMING
         clock_gettime(CLOCK_MONOTONIC, &startTime);
@@ -121,9 +130,22 @@ void Controller::run()
         }
 #endif
 
+#ifdef ENTITY
         master.receive();
+#else
+        for (int i = 0; i < 6; i++)
+        {
+            master.recvData.actualPosition[i] = master.targData.targetPosition[i];
+        }
+
+#endif
+
         clock_gettime(CLOCK_MONOTONIC, &time);
+
+
+#ifdef ENTITY
         master.sync(time.totalNanoSec());
+#endif
 
         switch (state)
         {
@@ -141,7 +163,7 @@ void Controller::run()
             break;
 
         case Moving:
-            switch (Server::recvData.motionMode)
+            switch (moveMode)
             {
             case ManualJoint:
                 jogJoint();
@@ -167,12 +189,33 @@ void Controller::run()
 
 
 
-
+#ifdef  ENTITY
         master.send();
+#endif
+
         for (int i = 0; i < 6; i++)
         {
             Server::sendData.actualPosition[i] = master.recvData.actualPosition[i];
         }
+
+        if(lastState != state)
+        {
+            if(Inactive == state){
+                printf("Inactive\n");
+            }
+            else if(Active == state){
+                printf("Active\n");
+            }
+            else if(Moving == state){
+                printf("Moving\n");
+            }
+            else if(Error == state){
+                printf("Error\n");
+            }
+            lastState = state;
+        }
+
+
 #ifdef FIFO_OUT
                 fifoData fifodata;
         for (int i = 0; i < 6; i++)
@@ -219,9 +262,20 @@ void Controller::error()
 {
     if(Server::recvData.faultReset)
     {
-        cout << "FaultRest" << endl;
+        // cout << "FaultRest" << endl;
+
+#ifdef ENTITY
+
         master.resetSlaveFault();
+
+#else
+
+        master.state.isErrExist = false;
+
+#endif
+
     }
+
     if(!master.state.isErrExist)
     {
         state = Inactive;
@@ -230,6 +284,7 @@ void Controller::error()
 
 void Controller::inactive() 
 {
+
     if(Server::recvData.enable || enableFlag)
     {
         master.enableSlave();
@@ -248,7 +303,21 @@ void Controller::inactive()
 
 void Controller::active() 
 {
-    switch (Server::recvData.motionMode)
+    if(Server::recvData.motionMode != moveMode)
+    {
+        if(0 == Server::recvData.motionMode){
+            moveMode = ManualJoint;
+        }
+        else if(1 == Server::recvData.motionMode){
+            moveMode = ManualCart;
+        }
+        else if(2 == Server::recvData.motionMode){
+            moveMode = Auto;
+        }
+        printMoveMode(moveMode);
+    }
+
+    switch (moveMode)
     {
     case ManualJoint:
         if(Server::recvData.jogButton != 0)
@@ -259,13 +328,14 @@ void Controller::active()
                 incPos.inc[i] = master.recvData.actualPosition[i];
             }
             joinpos_t joiPos = increment2jointangle(incPos);
-            cout << "joiPos: " << joiPos.joi[0] << endl;
+            // cout << "joiPos: " << joiPos.joi[0] << endl;
             qNext = increment2jointangle(master.recvData.actualPosition);
-            cout << "actualPosition_: " << master.recvData.actualPosition[0];
-            cout << "qNext_Inactive: " << qNext[0] << endl;
-            vNext = increVel2jointVel(master.recvData.actualVelocity);
-            cout << "vNext_Inactive_Inc: " << master.recvData.actualVelocity[0] << endl;
-            cout << "vNext_Inactive: " << vNext[0] << endl;
+            // cout << "actualPosition_: " << master.recvData.actualPosition[0];
+            // cout << "qNext_Inactive: " << qNext[0] << endl;
+            // vNext = increVel2jointVel(master.recvData.actualVelocity);
+            vNext << 0, 0, 0, 0, 0, 0;
+            // cout << "vNext_Inactive_Inc: " << master.recvData.actualVelocity[0] << endl;
+            // cout << "vNext_Inactive: " << vNext[0] << endl;
             state = Moving;
         }
         else
@@ -278,17 +348,17 @@ void Controller::active()
         break;
 
     case Auto:
+
+        for (int i = 0; i < 6; i++)
+        {
+            master.targData.targetPosition[i] = master.recvData.actualPosition[i];
+        }
+       
         if(Server::recvData.startSignal)
         {
             state = Moving;
         }
-        else
-        {
-            for (int i = 0; i < 6; i++)
-            {
-                master.targData.targetPosition[i] = master.recvData.actualPosition[i];
-            }
-        }
+       
         break;
 
     default:
@@ -379,16 +449,26 @@ void Controller::autoMoving()
         {
             master.targData.targetPosition[i] = pos.targetPosition[i];
         }
+        // state = Active;
+    }
+    if(Server::recvData.stopSignal){
+        state = Active;
     }
 }
 
 int Controller::init() 
 {
-    if(-1 == master.init()){
+
+#ifdef ENTITY
+
+    if (-1 == master.init())
+    {
         cout << "controller init master failed" << endl;
         state = Error;
         return -1;
     }
+
+#endif
 
     if(-1 == posQueue.init()){
         state = Error;
@@ -406,10 +486,10 @@ int Controller::init()
         perror("pipe open failed: ");
     }
 
-    for(int i = 0; i < 6; i++)
-    {
-        master.recvData.actualPosition[i] = 0;
-    }
+
+    
+    master.state.isErrExist = false;
+
 
     Vmax = 10;
     acc = Vmax/2;
@@ -420,6 +500,10 @@ int Controller::init()
     v << 0, 0, 0, 0, 0, 0;
     vNext << 0, 0, 0, 0, 0, 0;
 
+    jointangle2increment(master.recvData.actualPosition, qNext);
+    jointangle2increment(master.targData.targetPosition, qNext);
+
     state = Inactive;
     enableFlag = false;
+    moveMode = ManualJoint;
 }

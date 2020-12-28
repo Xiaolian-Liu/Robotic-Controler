@@ -18,5 +18,6 @@ class PositionQueue : public MessageQueue
         int getPosition(incPos_t * pos, Time timeOut);
 		int sendPosition(incPos_t pos);
 		int sendPosition(incPos_t pos, Time timeOut);
+		int size();
 		~PositionQueue();
 };

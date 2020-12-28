@@ -33,6 +33,20 @@ class Controller : public Thread
 			ManualCart = 1,
 			Auto = 2
 		};
+
+		void printMoveMode(MoveMode mode)
+		{
+			if(ManualJoint == mode){
+				printf("ManualJoint\n");
+			}
+			else if(ManualCart == mode){
+				printf("ManualCart\n");
+			}
+			else if(Auto == mode){
+				printf("Auto\n");
+			}
+		}
+		
 		bool enableFlag;
 		int frequency;
 		int cycleTime;
@@ -48,6 +62,8 @@ class Controller : public Thread
 		void autoMoving();
 
 		int pipe_fd;
+
+		bool simulate;
 
 	public:
 		double Vmax;

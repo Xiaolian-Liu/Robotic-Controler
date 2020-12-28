@@ -1,5 +1,6 @@
-#include "trajectory.h"
-#include "er20.h"
+#include "kinematics/er20.h"
+#include "kinematics/trajectory.h"
+// #include "er20.h"
 
 #ifndef PI
 #define PI 3.1415926545

@@ -44,3 +44,10 @@ int PositionQueue::sendPosition(incPos_t pos, Time timeOut)
 {
     return mq_timedsend(mqd, (char *)&pos, sizeof(incPos_t), 0, &timeOut);
 }
+
+int PositionQueue::size() 
+{
+    mq_attr attra;
+    mq_getattr(mqd, &attra);
+    return attra.mq_curmsgs;
+}

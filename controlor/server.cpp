@@ -60,14 +60,14 @@ void * Server::to_uiclient(void *data)
         if(1 == recvTemp.client_id)
         {
             recvData = recvTemp;
-        }
-        if(recvData.motionCommandSize > 0)
-        {
-            for (int i = 0; i < recvData.motionCommandSize; i++)
+            if(recvData.motionCommandSize > 0)
             {
-                motionCommand command;
-                read(client_sockfd, (char *)&command, sizeof(command));
-                commandQueue.push(command);
+                for (int i = 0; i < recvData.motionCommandSize; i++)
+                {
+                    motionCommand command;
+                    read(client_sockfd, (char *)&command, sizeof(command));
+                    commandQueue.push(command);
+                }
             }
         }
 

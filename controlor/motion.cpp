@@ -12,6 +12,7 @@
 #include "commu/StateData.hpp"
 #include "ecat/EthercatMaster.hpp"
 #include "server.hpp"
+#include "kinematics/er20.h"
 
 using std::ofstream;
 extern int run;
@@ -244,17 +245,91 @@ int cir(seqJointVec & jangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int 
 
 void * PTP(void *cookie)
 {
+	EthercatMaster *master = (EthercatMaster *)cookie;
+	printf("PTP/n");
+	PositionQueue posqueue;
+	posqueue.init();
+
+	printf("Satrt PTP......\n");
+
+	incpos_t ip0;
+
+	while(run)
+	{
+		// stateData_t sdata = StateData::getData();
+        if (1 == master->state.isEnable)
+		{
+			printf("go to break\n");
+			break;
+		}
+        // printf("Enable ID: %d\n", StateData::data.isEnable);
+        // printf("Enable ID: %d\n", beEnable);
+        sleep(1);
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		ip0.inc[i] = master->recvData.actualPosition[i];
+		printf("ip0.inc[%d] = %d\n", i, ip0.inc[i]);
+	}
+
+	joinpos_t ij0 = increment2jointangle(ip0);
+	for(int i=0; i<6; i++){
+		printf("ij0.joi[%d] = %f\n", i, ij0.joi[i]);
+	}
+
+	JointVec vij0;
+	vij0 << ij0.joi[0], ij0.joi[1], ij0.joi[2], ij0.joi[3], ij0.joi[4], ij0.joi[5];
+
+	// JointVec JVnext = vij0;
+	seqJointVec angles;
+
+
+
 	while(run)
 	{
 		if(Server::commandQueue.size() > 0)
 		{
+			while(posqueue.size() != 0)
+			{
+				usleep(20000);
+			}
+			JointVec JVnow = increment2jointangle(master->recvData.actualPosition);
+			
 			motionCommand comm = Server::commandQueue.front();
 			Server::commandQueue.pop();
 			Server::printMotionCommand(&comm);
-		}
-		usleep(500);
-	}
 
+			JointVec JVnext;
+			JVnext << comm.PosFin[0], comm.PosFin[1], comm.PosFin[2], comm.PosFin[3], comm.PosFin[4], comm.PosFin[5];
+
+			if(0 == comm.mode)
+			{
+				ptp(angles, JVnow, JVnext, 2, 5, 200);
+
+				for(size_t i=0; i<angles.size(); i++)
+				{
+					DriveVec ip = Joint2Drive(angles[i]);
+					incPos_t iP;
+					for(int j=0; j<6; j++)
+					{
+						iP.targetPosition[j] = ip[j];
+					}
+					posqueue.sendPosition(iP);
+				}
+			}
+		}
+		usleep(1000);
+	}
+	return NULL;
+
+
+
+
+
+
+
+/*
 	EthercatMaster *master = (EthercatMaster *)cookie;
 	printf("PTP/n");
 	PositionQueue posqueue;
@@ -442,7 +517,7 @@ void * PTP(void *cookie)
 	pf.pe << 1000, -100, 586;
 	pf.rpy << -180, 0, 0;
 
-
+*/
 
 /*
 	lin(angles, ps, p0, 5, 5);
@@ -547,6 +622,8 @@ void * PTP(void *cookie)
 	}
 
 */
+
+/*
 	p0.rpy << -220, 0, 0;
 	pi.rpy << -180, 0, 0;
 	pf.rpy << -140, 0, 0;
@@ -697,4 +774,7 @@ void * PTP(void *cookie)
 	std::cout << "lin:phome->pdabao succeed!\n";
 
 	return NULL;
+
+*/
+
 }

@@ -96,7 +96,7 @@ struct server_recvData_t
 
 struct motionCommand
 {
-    uint8_t mode;
+    uint8_t mode; // 0 -- PTP, 1 -- Lin, 2 -- Cir
     double PosMid[6];
     double PosFin[6];
     uint8_t velPercent;
