@@ -12,7 +12,7 @@
 
 #define FIFO_NAME "/tmp/my_fifo"
 
-// #define ENTITY 
+#define ENTITY 
 
 
 

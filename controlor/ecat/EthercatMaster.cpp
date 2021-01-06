@@ -10,7 +10,8 @@ EthercatMaster::EthercatMaster(uint32_t cycleTime, unsigned int index)
 {
     this->cycleTime = cycleTime;
     this->masterIndex = index;
-    nSlaves = 0;
+    // nSlaves = 0;
+    nSlaves = 3;
     // allSlavesSate = INIT;
     // linkUp = false;
     master = nullptr;
@@ -67,7 +68,9 @@ int EthercatMaster::init()
     }
 
     ecrt_master_state(master, &masterState);
-    nSlaves = masterState.slaves_responding;
+    if(0 == nSlaves){
+        nSlaves = masterState.slaves_responding;
+    }
     // allSlavesSate = ALState(masterState.al_states);
     // linkUp = masterState.link_up;
 
