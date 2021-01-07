@@ -1,6 +1,6 @@
 *.[ao]
 *.run
-*.txt
+# *.txt
 *.dat
 moc_*.cpp
 teachview-build/
@@ -33,8 +33,9 @@ teachview/kinematics/.vs/
 bin/controlor
 bin/kinematics
 bin/teachview
+bin/plot
 robotics/.vs/robotics/v15/.suo
 *.ipch
-*bin*
+# *bin*
 *.pro*
 *.pri*
