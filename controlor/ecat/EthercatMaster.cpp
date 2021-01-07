@@ -10,8 +10,8 @@ EthercatMaster::EthercatMaster(uint32_t cycleTime, unsigned int index)
 {
     this->cycleTime = cycleTime;
     this->masterIndex = index;
-    // nSlaves = 0;
-    nSlaves = 3;
+    nSlaves = 0;
+    // nSlaves = 3;
     // allSlavesSate = INIT;
     // linkUp = false;
     master = nullptr;
@@ -46,7 +46,18 @@ EthercatMaster::EthercatMaster(uint32_t cycleTime, unsigned int index)
         targData.targetOperationMode[i] = 8;
         targData.targetVelocity[i] = 0;
         targData.targetPosition[i] = 0;
+
+        recvData.actualOperationMode[i] = 8;
+        recvData.actualPosition[i] = 0;
+        recvData.actualTorque[i] = 0;
+        recvData.actualVelocity[i] = 0;
+        recvData.statusWrod[i] = 0;
     }
+    state.al_states = 0;
+    state.isEnable = false;
+    state.isErrExist = false;
+    state.link_up = 0;
+    state.slaves_responding = 0;
 }
 
 EthercatMaster::~EthercatMaster()

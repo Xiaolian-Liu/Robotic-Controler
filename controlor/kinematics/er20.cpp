@@ -174,6 +174,16 @@ JointVec increVel2jointVel(const int32_t *in)
 	return p;
 }
 
+JointVec increTor2jointTor(const int16_t *in) 
+{
+	JointVec T;
+	for (int i = 0; i < 5; i++)
+	{
+		T[i] = in[i] * ratio[i];
+	}
+	T[5] = (in[5] - in[4] / ratio56) * ratio[5];
+}
+
 incpos_t jointangle2increment(const joinpos_t & jo)
 {
 	incpos_t p;

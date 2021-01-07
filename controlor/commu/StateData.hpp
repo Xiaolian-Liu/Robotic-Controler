@@ -24,7 +24,7 @@ struct stateData_t
     unsigned int        link_up; /**< \a true, if at least one Ethernet link is
                                 up. */
     bool                isEnable;
-    bool isErrExist;
+    bool                isErrExist;
 };
 
 class StateData

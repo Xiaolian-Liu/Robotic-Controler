@@ -48,6 +48,7 @@
 #include "motion.h"
 #include "server.hpp"
 #include "base/ThreadTest.hpp"
+#include "RecordData.hpp"
 
 using namespace std;
 
@@ -107,20 +108,24 @@ int main()
     Server server(200, 9734);
     server.start();
 
-//    pthread_t pdrive;
-//    pthread_t pmotion;
-//    pthread_create(&pdrive, NULL, driveinit, NULL);
-////    driveinit(nullptr);
-////    sleep(10);
-//    int resp = pthread_create(&pmotion, NULL, PTP, NULL);
-//    if(resp != 0)
-//    {
-//        perror("thread creat failed: ");
-//    }
+    RecordData record(&control);
+    record.start();
+
+    //    pthread_t pdrive;
+    //    pthread_t pmotion;
+    //    pthread_create(&pdrive, NULL, driveinit, NULL);
+    ////    driveinit(nullptr);
+    ////    sleep(10);
+    //    int resp = pthread_create(&pmotion, NULL, PTP, NULL);
+    //    if(resp != 0)
+    //    {
+    //        perror("thread creat failed: ");
+    //    }
 
 
-    sleep(10);
+    // sleep(10);
     PTP(control.getMaster());
+
 //    ThreadTest test1;
 //    ThreadTest test2;
 
@@ -135,14 +140,17 @@ int main()
     control.quit();
     control.wait();
 
-//    server.quit();
-//    server.terminate();
-//    server.wait();
+    record.quit();
+    record.wait();
 
-//    test1.quit();
-//    test2.quit();
-//    test1.wait();
-//    test2.wait();
+    //    server.quit();
+    //    server.terminate();
+    //    server.wait();
+
+    //    test1.quit();
+    //    test2.quit();
+    //    test1.wait();
+    //    test2.wait();
     /*
 
     struct sched_param param;

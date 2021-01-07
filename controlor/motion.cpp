@@ -14,6 +14,7 @@
 #include "server.hpp"
 #include "kinematics/er20.h"
 
+using std::ifstream;
 using std::ofstream;
 extern int run;
 extern int beEnable;
@@ -242,11 +243,43 @@ int cir(seqJointVec & jangle, Matrix4d T0, Matrix4d Ti, Matrix4d Tf, int a, int 
 	return 0;
 }
 
+void outputText(const seqJointVec & angles, const char * s)
+{
+	ofstream of;		//
+	of.open(s);//
+	for (int i = 0; i < angles.size(); i++)
+	{
+		for (int j = 0; j < 6; j++)
+		{
+			of << angles[i][j] << " ";
+		}
+		of << std::endl;//
+	}
+	of.close();
+}
+
+int inputText(seqJointVec & angles, const char * s)
+{
+	angles.clear();
+	ifstream inputFile;
+	inputFile.open(s);
+	JointVec jangle;
+	while(inputFile >> jangle[0])
+	{
+		for (int i = 1; i < 6; i++)
+		{
+			inputFile >> jangle[i];
+		}
+		angles.push_back(jangle);
+	}
+	inputFile.close();
+	return angles.size();
+}
 
 void * PTP(void *cookie)
 {
 	EthercatMaster *master = (EthercatMaster *)cookie;
-	printf("PTP/n");
+	printf("PTP\n");
 	PositionQueue posqueue;
 	posqueue.init();
 
@@ -267,25 +300,30 @@ void * PTP(void *cookie)
         sleep(1);
 	}
 
-	for (int i = 0; i < 6; i++)
-	{
-		ip0.inc[i] = master->recvData.actualPosition[i];
-		printf("ip0.inc[%d] = %d\n", i, ip0.inc[i]);
-	}
-
-	joinpos_t ij0 = increment2jointangle(ip0);
-	for(int i=0; i<6; i++){
-		printf("ij0.joi[%d] = %f\n", i, ij0.joi[i]);
-	}
-
-	JointVec vij0;
-	vij0 << ij0.joi[0], ij0.joi[1], ij0.joi[2], ij0.joi[3], ij0.joi[4], ij0.joi[5];
-
-	// JointVec JVnext = vij0;
 	seqJointVec angles;
 
+	if(!inputText(angles, "exciteData2.txt")){
+		printf("can't open text file\n");
+		return NULL;
+	}
 
+	printf("go to moving\n");
 
+	for(size_t i = 0; i < angles.size(); i++)
+	{
+
+		DriveVec ip = Joint2Drive(angles[i]);
+		incPos_t iP;
+		for(int j=0; j<6; j++)
+		{
+			iP.targetPosition[j] = ip[j];
+		}
+		posqueue.sendPosition(iP);
+	}
+	std::cout << "ptp:j0->j1 succeed!\n";
+	return NULL;
+
+	/*
 	while(run)
 	{
 		if(Server::commandQueue.size() > 0)
@@ -323,13 +361,9 @@ void * PTP(void *cookie)
 	}
 	return NULL;
 
+*/
 
-
-
-
-
-
-/*
+	/*
 	EthercatMaster *master = (EthercatMaster *)cookie;
 	printf("PTP/n");
 	PositionQueue posqueue;
@@ -519,7 +553,7 @@ void * PTP(void *cookie)
 
 */
 
-/*
+	/*
 	lin(angles, ps, p0, 5, 5);
 	for(size_t i=0; i<angles.size(); i++)
 	{
@@ -623,7 +657,7 @@ void * PTP(void *cookie)
 
 */
 
-/*
+	/*
 	p0.rpy << -220, 0, 0;
 	pi.rpy << -180, 0, 0;
 	pf.rpy << -140, 0, 0;

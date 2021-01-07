@@ -9,6 +9,9 @@
 #include "commu/PositionQueue.hpp"
 #include "kinematics/er20.h"
 
+#include "queue"
+using std::queue;
+
 struct fifoData
 {
 	int32_t tarpos[6];
@@ -31,7 +34,8 @@ class Controller : public Thread
 		{
 			ManualJoint = 0,
 			ManualCart = 1,
-			Auto = 2
+			Auto = 2,
+			FromText = 3
 		};
 
 		void printMoveMode(MoveMode mode)
@@ -75,10 +79,17 @@ class Controller : public Thread
 		JointVec v;
 		JointVec vNext;
 		JointVec vLast;
+		JointVec torque;
+		JointVec torNext;
+		
 		JointVec q0;
 		JointVec v0;
 		uint64_t n;
 		uint64_t n1;
+
+		queue<JointVec> qBuff;
+		queue<JointVec> qdBuff;
+		queue<JointVec> TorqueBuff;
 
 		int init();
 		Controller(int freq);

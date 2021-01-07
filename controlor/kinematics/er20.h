@@ -87,11 +87,11 @@ using std::vector;
 
 // The incremental offset
 #define INCOFF1		79744
-#define INCOFF2 	1184
-#define INCOFF3		67868
-#define INCOFF4		91334
-#define INCOFF5		43701
-#define INCOFF6		5408
+#define INCOFF2 	1182
+#define INCOFF3		67872
+#define INCOFF4		47616
+#define INCOFF5		11973
+#define INCOFF6		148827
 
 // The bits of encoders in the momotor
 #define BITS 	17
@@ -207,6 +207,7 @@ JointVec DH2Joint(DHsysVec);
 joinpos_t increment2jointangle(const incpos_t & in);
 JointVec increment2jointangle(const int32_t *in);
 JointVec increVel2jointVel(const int32_t *in);
+JointVec increTor2jointTor(const int16_t *in);
 incpos_t jointangle2increment(const joinpos_t &jo);
 void jointangle2increment(int32_t *inc, const JointVec &jo);
 
