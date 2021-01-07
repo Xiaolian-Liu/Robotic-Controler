@@ -30,6 +30,7 @@ void RecordData::run()
                 ofPos << q[i] << " ";
             }
             ofPos << std::endl;
+            control->qBuff.pop();
         }
 
         while(control->qdBuff.size() > 0)
@@ -40,6 +41,7 @@ void RecordData::run()
                 ofVel << qd[i] << " ";
             }
             ofVel << std::endl;
+            control->qdBuff.pop();
         }
 
         while(control->TorqueBuff.size() > 0)
@@ -50,6 +52,7 @@ void RecordData::run()
                 ofTorque << Torque[i] << " ";
             }
             ofTorque << std::endl;
+            control->TorqueBuff.pop();
         }
 
         usleep(100000);
