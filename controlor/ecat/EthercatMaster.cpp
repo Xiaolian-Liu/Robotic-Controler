@@ -358,6 +358,12 @@ int EthercatMaster::init()
             goto init_end;
         }
 
+        if(ecrt_slave_config_sdo8(slaveConfig[i], 0x605B, 0, 0x01))     //Shutdown option code
+        {
+            cerr << "Failed to configure sdo. \n";
+            goto init_end;
+        }
+        
         cout << "Configuring Slave" << i << " PDOs...\n";
         if(ecrt_slave_config_pdos(slaveConfig[i], EC_END, slave[i].syncManger())){
             cerr << "Master init failed, fail to configure Slave " << i << "PDOS" << endl;
