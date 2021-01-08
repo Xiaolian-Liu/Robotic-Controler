@@ -370,11 +370,6 @@ void Controller::active()
         master.shutDownSlave();
         state = Inactive;
     }
-
-    v = increVel2jointVel(master.recvData.actualVelocity);
-    torque = increTor2jointTor(master.recvData.actualTorque);
-    printf("qd:%f\n", v[2]);
-    printf("torque:%f\n", torque[2]);
 }
 
 void Controller::jogJoint() 
@@ -434,11 +429,6 @@ void Controller::jogJoint()
         // cout << "vNext: " << vNext[0] << endl;
         // cout << "qNext: " << qNext[0] << endl;
 
-    v = increVel2jointVel(master.recvData.actualVelocity);
-    torque = increTor2jointTor(master.recvData.actualTorque);
-    printf("qd:%f\n", v[2]);
-    printf("torque:%f\n", torque[2]);
-
     jointangle2increment(master.targData.targetPosition, qNext);
     // cout << "targetPosition: " << master.targData.targetPosition[0] << endl;
 }
@@ -464,8 +454,6 @@ void Controller::autoMoving()
         q = increment2jointangle(master.recvData.actualPosition);
         v = increVel2jointVel(master.recvData.actualVelocity);
         torque = increTor2jointTor(master.recvData.actualTorque);
-        printf("qd:%f\n", v[2]);
-        printf("torque:%f\n", torque[2]);
         qBuff.push(q);
         qdBuff.push(v);
         TorqueBuff.push(torque);
