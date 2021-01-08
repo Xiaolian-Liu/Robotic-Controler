@@ -249,5 +249,7 @@ void jointangle_show(const double jointangle[6]);
 
 void cartpose_show(const cartpos_t &pos);
 
+void printJointVec(const JointVec &J);
+
 #endif
 

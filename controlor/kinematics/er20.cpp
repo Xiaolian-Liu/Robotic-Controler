@@ -182,6 +182,7 @@ JointVec increTor2jointTor(const int16_t *in)
 		T[i] = in[i] * ratio[i];
 	}
 	T[5] = (in[5] - in[4] / ratio56) * ratio[5];
+    return T;
 }
 
 incpos_t jointangle2increment(const joinpos_t & jo)
@@ -890,4 +891,12 @@ int invkine(JointVec & jp, JointVec j0, Matrix4d T)
 	}
 }
 
+void printJointVec(const JointVec &J) 
+{
+	for (int i = 0; i < 6; i++)
+	{
+        cout << right << setw(15) << J[i] << " ";
+	}
+	cout << endl;
+}
 

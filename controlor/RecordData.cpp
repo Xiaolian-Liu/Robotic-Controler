@@ -36,6 +36,8 @@ void RecordData::run()
         while(control->qdBuff.size() > 0)
         {
             JointVec qd = control->qdBuff.front();
+            // std::cout << "qd:";
+            // printJointVec(qd);
             for (int i = 0; i < 6; i++)
             {
                 ofVel << qd[i] << " ";
@@ -46,7 +48,9 @@ void RecordData::run()
 
         while(control->TorqueBuff.size() > 0)
         {
+            // std::cout << "Torque:";
             JointVec Torque = control->TorqueBuff.front();
+            // printJointVec(Torque);
             for (int i = 0; i < 6; i++)
             {
                 ofTorque << Torque[i] << " ";
