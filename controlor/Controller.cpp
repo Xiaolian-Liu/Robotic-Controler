@@ -439,12 +439,12 @@ void Controller::jogJoint()
 
     jointangle2increment(master.targData.targetPosition, qNext);
 
-    q = increment2jointangle(master.recvData.actualPosition);
-    v = increVel2jointVel(master.recvData.actualVelocity);
-    torque = increTor2jointTor(master.recvData.actualTorque);
-    qBuff.push(q);
-    qdBuff.push(v);
-    TorqueBuff.push(torque);
+    // q = increment2jointangle(master.recvData.actualPosition);
+    // v = increVel2jointVel(master.recvData.actualVelocity);
+    // torque = increTor2jointTor(master.recvData.actualTorque);
+    // qBuff.push(q);
+    // qdBuff.push(v);
+    // TorqueBuff.push(torque);
 
 
 
@@ -463,11 +463,14 @@ void Controller::autoMoving()
     }
     else
     {
-        for (int i = 0; i < 6;i++)
-        {
-            master.targData.targetPosition[i] = pos.targetPosition[i];
-        }
+        // for (int i = 0; i < 6;i++)
+        // {
+        //     master.targData.targetPosition[i] = pos.targetPosition[i];
+        // }
+
+        master.targData.targetPosition[0] = pos.targetPosition[0];
         
+
         q = increment2jointangle(master.recvData.actualPosition);
         v = increVel2jointVel(master.recvData.actualVelocity);
         torque = increTor2jointTor(master.recvData.actualTorque);
