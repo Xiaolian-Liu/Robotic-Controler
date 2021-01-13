@@ -26,7 +26,8 @@ SOURCES += \
     main.cpp \
     motion.cpp \
     server.cpp \
-    RecordData.cpp
+    RecordData.cpp \
+    ScanfVelAcc.cpp
 
 
 
@@ -55,7 +56,8 @@ HEADERS += \
     drive.h \
     motion.h \
     server.hpp \
-    RecordData.hpp
+    RecordData.hpp \
+    ScanfVelAcc.hpp
 
 
 INCLUDEPATH += /home/vito/Robotic-Controler/include

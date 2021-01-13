@@ -57,6 +57,7 @@ class Controller : public Thread
 		EthercatMaster master;
 		PositionQueue posQueue;
 		State state;
+		State lastState;
 		MoveMode moveMode;
 		virtual void run();
 		void error();
@@ -70,6 +71,7 @@ class Controller : public Thread
 		bool simulate;
 
 	public:
+		const double VThreshold = 50;
 		double Vmax;
 		double acc;
 		double dec;
@@ -90,6 +92,9 @@ class Controller : public Thread
 		queue<JointVec> qBuff;
 		queue<JointVec> qdBuff;
 		queue<JointVec> TorqueBuff;
+
+		double velPercent;
+		double accPercent;
 
 		int init();
 		Controller(int freq);

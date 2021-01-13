@@ -176,6 +176,7 @@ void Controller::run()
             default:
                 break;
             }
+            lastState = Moving;
             break;
 
         default:
@@ -318,6 +319,8 @@ void Controller::active()
         printMoveMode(moveMode);
     }
 
+
+
     switch (moveMode)
     {
     case ManualJoint:
@@ -370,12 +373,19 @@ void Controller::active()
         master.shutDownSlave();
         state = Inactive;
     }
+
+    lastState = Active;
 }
 
 void Controller::jogJoint() 
 {
     int jogButton = Server::recvData.jogButton;
     int jogIndex = 0;
+
+    Vmax = (velPercent/100) * VThreshold;
+    acc = Vmax/2;
+    dec = Vmax * 2;
+
     if (jogButton > 0)
     {
         jogIndex = jogButton - 1;
@@ -426,11 +436,18 @@ void Controller::jogJoint()
             qNext[i] = qMin[i];
         }
     }
-        // cout << "vNext: " << vNext[0] << endl;
-        // cout << "qNext: " << qNext[0] << endl;
 
     jointangle2increment(master.targData.targetPosition, qNext);
-    // cout << "targetPosition: " << master.targData.targetPosition[0] << endl;
+
+    q = increment2jointangle(master.recvData.actualPosition);
+    v = increVel2jointVel(master.recvData.actualVelocity);
+    torque = increTor2jointTor(master.recvData.actualTorque);
+    qBuff.push(q);
+    qdBuff.push(v);
+    TorqueBuff.push(torque);
+
+
+
 }
 
 void Controller::autoMoving() 
@@ -499,8 +516,9 @@ int Controller::init()
     
     master.state.isErrExist = false;
 
+    velPercent = 20;
 
-    Vmax = 10;
+    Vmax = (velPercent/100) * VThreshold;
     acc = Vmax/2;
     dec = Vmax * 2;
     deltaT = 1.0 / frequency;
@@ -512,7 +530,7 @@ int Controller::init()
     jointangle2increment(master.recvData.actualPosition, qNext);
     jointangle2increment(master.targData.targetPosition, qNext);
 
-    state = Inactive;
+    state = Active;
     enableFlag = false;
     moveMode = ManualJoint;
 }

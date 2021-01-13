@@ -301,8 +301,8 @@ void * PTP(void *cookie)
 	}
 
 	seqJointVec angles;
-
-	if(!inputText(angles, "exciteData2.txt")){
+      
+	if(!inputText(angles, "frictiontestTraj.txt")){
 		printf("can't open text file\n");
 		return NULL;
 	}

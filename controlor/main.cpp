@@ -49,6 +49,7 @@
 #include "server.hpp"
 #include "base/ThreadTest.hpp"
 #include "RecordData.hpp"
+#include "ScanfVelAcc.hpp"
 
 using namespace std;
 
@@ -111,6 +112,9 @@ int main()
     RecordData record(&control);
     record.start();
 
+    ScanfVelAcc scan(&control);
+    scan.start();
+
     //    pthread_t pdrive;
     //    pthread_t pmotion;
     //    pthread_create(&pdrive, NULL, driveinit, NULL);
@@ -121,7 +125,6 @@ int main()
     //    {
     //        perror("thread creat failed: ");
     //    }
-
 
     // sleep(10);
     PTP(control.getMaster());
@@ -143,6 +146,9 @@ int main()
     record.quit();
     record.wait();
 
+    scan.terminate();
+    scan.wait();
+    
     //    server.quit();
     //    server.terminate();
     //    server.wait();
