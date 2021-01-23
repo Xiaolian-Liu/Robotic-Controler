@@ -533,7 +533,8 @@ int Controller::init()
     jointangle2increment(master.recvData.actualPosition, qNext);
     jointangle2increment(master.targData.targetPosition, qNext);
 
-    state = Active;
+    // state = Active;
+    state = Inactive;
     enableFlag = false;
     moveMode = ManualJoint;
 }

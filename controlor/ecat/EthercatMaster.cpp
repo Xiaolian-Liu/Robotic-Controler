@@ -175,10 +175,10 @@ int EthercatMaster::init()
     }
     
 
-    // for (unsigned int i = 0; i < nSlaves; i++)
-    // {
-    //     cout << slave[i] << endl;
-    // }
+    for (unsigned int i = 0; i < nSlaves; i++)
+    {
+        cout << slave[i] << endl;
+    }
 
     offControlWord = new unsigned int[nSlaves];
     offTargetPosition = new unsigned int[nSlaves];
@@ -410,13 +410,13 @@ int EthercatMaster::active()
         return -1;
     }
 
-    cout << "ControlWord  " << offControlWord[0] << endl;
-    cout << "TargetPos  " << offTargetPosition[0] << endl;
-    cout << "TargetVel  " << offTargetVelocity[0] << endl;
-    cout << "ModeofOP  \n" << offTargetModeOP[0] << endl;
+    // cout << "ControlWord  " << offControlWord[0] << endl;
+    // cout << "TargetPos  " << offTargetPosition[0] << endl;
+    // cout << "TargetVel  " << offTargetVelocity[0] << endl;
+    // cout << "ModeofOP  \n" << offTargetModeOP[0] << endl;
 
-    cout << "StatusWord  " << offSatesWord[0] << endl;
-    cout << "actualpos  " << offActualPosition[0] << endl;
+    // cout << "StatusWord  " << offSatesWord[0] << endl;
+    // cout << "actualpos  " << offActualPosition[0] << endl;
 
     cout << "active done! can start the cyclic function." << endl;
 }

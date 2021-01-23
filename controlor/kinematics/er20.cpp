@@ -91,6 +91,16 @@ const double theta_offset[6] =
 	0
 };
 
+const double Tk[6] = 
+{
+	0.007172397789735,
+	0.009615071639379,
+	0.003004258562934,
+	0.001271802791642,
+	0.001271802791642,
+	6.409084934258972e-4
+};
+
 double degree2rad(double angle)
 {
 	return (angle * PI / 180);
@@ -177,11 +187,17 @@ JointVec increVel2jointVel(const int32_t *in)
 JointVec increTor2jointTor(const int16_t *in) 
 {
 	JointVec T;
+	double tau[6];
+	for (int i = 0; i < 6; i++)
+	{
+		tau[i] = in[i] * Tk[i];
+	}
+	
 	for (int i = 0; i < 5; i++)
 	{
-		T[i] = in[i] * ratio[i];
+		T[i] = tau[i] * ratio[i];
 	}
-	T[5] = (in[5] - in[4] / ratio56) * ratio[5];
+	T[5] = (tau[5] - tau[4] / ratio56) * ratio[5];
     return T;
 }
 

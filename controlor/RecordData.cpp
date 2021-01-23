@@ -16,9 +16,9 @@ RecordData::~RecordData()
 void RecordData::run() 
 {
     ofstream ofPos, ofVel, ofTorque;
-    ofPos.open("position_FourierFrictionTestAxis1.txt");
-    ofVel.open("velocity_FourierFrictionTestAxis1.txt");
-    ofTorque.open("torque_FourierFrictionTestAxis1.txt");
+    ofPos.open("q_stribeck_const_speed4.txt");
+    ofVel.open("qd_stribeck_const_speed4.txt");
+    ofTorque.open("tau_stribeck_const_speed4.txt");
 
     while (isRun)
     {
