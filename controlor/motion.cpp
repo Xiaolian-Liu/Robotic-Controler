@@ -302,65 +302,65 @@ void * PTP(void *cookie)
 
 	seqJointVec angles;
       
-	if(!inputText(angles, "stribeck_constant_speed_excite4.txt")){
-		printf("can't open text file\n");
-		return NULL;
-	}
+	// if(!inputText(angles, "stribeck_constant_speed_excite4.txt")){
+	// 	printf("can't open text file\n");
+	// 	return NULL;
+	// }
 
-	printf("go to moving\n");
+	// printf("go to moving\n");
 
-	for(size_t i = 0; i < angles.size(); i++)
-	{
+	// for(size_t i = 0; i < angles.size(); i++)
+	// {
 
-		DriveVec ip = Joint2Drive(angles[i]);
-		incPos_t iP;
-		for(int j=0; j<6; j++)
-		{
-			iP.targetPosition[j] = ip[j];
-		}
-		posqueue.sendPosition(iP);
-	}
-	std::cout << "ptp:j0->j1 succeed!\n";
-	return NULL;
+	// 	DriveVec ip = Joint2Drive(angles[i]);
+	// 	incPos_t iP;
+	// 	for(int j=0; j<6; j++)
+	// 	{
+	// 		iP.targetPosition[j] = ip[j];
+	// 	}
+	// 	posqueue.sendPosition(iP);
+	// }
+	// std::cout << "ptp:j0->j1 succeed!\n";
+	// return NULL;
 
 	
-	// while(run)
-	// {
-	// 	if(Server::commandQueue.size() > 0)
-	// 	{
-	// 		while(posqueue.size() != 0)
-	// 		{
-	// 			usleep(20000);
-	// 		}
-	// 		JointVec JVnow = increment2jointangle(master->recvData.actualPosition);
+	while(run)
+	{
+		if(Server::commandQueue.size() > 0)
+		{
+			while(posqueue.size() != 0)
+			{
+				usleep(20000);
+			}
+			JointVec JVnow = increment2jointangle(master->recvData.actualPosition);
 			
-	// 		motionCommand comm = Server::commandQueue.front();
-	// 		Server::commandQueue.pop();
-	// 		Server::printMotionCommand(&comm);
+			motionCommand comm = Server::commandQueue.front();
+			Server::commandQueue.pop();
+			Server::printMotionCommand(&comm);
 
-	// 		JointVec JVnext;
-	// 		JVnext << comm.PosFin[0], comm.PosFin[1], comm.PosFin[2], comm.PosFin[3], comm.PosFin[4], comm.PosFin[5];
+			JointVec JVnext;
+			JVnext << comm.PosFin[0], comm.PosFin[1], comm.PosFin[2], comm.PosFin[3], comm.PosFin[4], comm.PosFin[5];
 
-	// 		if(0 == comm.mode)
-	// 		{
-	// 			ptp(angles, JVnow, JVnext, 2, 5, 200);
-	// 			printf("go to ptp\n");
+			if(0 == comm.mode)
+			{
+				ptp(angles, JVnow, JVnext, 2, 5, 200);
+				printf("go to ptp\n");
 
-	// 			for(size_t i=0; i<angles.size(); i++)
-	// 			{
-	// 				DriveVec ip = Joint2Drive(angles[i]);
-	// 				incPos_t iP;
-	// 				for(int j=0; j<6; j++)
-	// 				{
-	// 					iP.targetPosition[j] = ip[j];
-	// 				}
-	// 				posqueue.sendPosition(iP);
-	// 			}
-	// 		}
-	// 	}
-	// 	usleep(1000);
-	// }
-	// return NULL;
+				for(size_t i=0; i<angles.size(); i++)
+				{
+					DriveVec ip = Joint2Drive(angles[i]);
+					incPos_t iP;
+					for(int j=0; j<6; j++)
+					{
+						iP.targetPosition[j] = ip[j];
+					}
+					posqueue.sendPosition(iP);
+				}
+			}
+		}
+		usleep(1000);
+	}
+	return NULL;
 
 
 

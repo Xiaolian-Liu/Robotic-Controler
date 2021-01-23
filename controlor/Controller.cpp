@@ -334,12 +334,12 @@ void Controller::active()
             joinpos_t joiPos = increment2jointangle(incPos);
             // cout << "joiPos: " << joiPos.joi[0] << endl;
             qNext = increment2jointangle(master.recvData.actualPosition);
-            // cout << "actualPosition_: " << master.recvData.actualPosition[0];
-            // cout << "qNext_Inactive: " << qNext[0] << endl;
-            // vNext = increVel2jointVel(master.recvData.actualVelocity);
+            cout << "actualPosition_: " << master.recvData.actualPosition[0];
+            cout << "qNext_Inactive: " << qNext[0] << endl;
+            vNext = increVel2jointVel(master.recvData.actualVelocity);
             vNext << 0, 0, 0, 0, 0, 0;
-            // cout << "vNext_Inactive_Inc: " << master.recvData.actualVelocity[0] << endl;
-            // cout << "vNext_Inactive: " << vNext[0] << endl;
+            cout << "vNext_Inactive_Inc: " << master.recvData.actualVelocity[0] << endl;
+            cout << "vNext_Inactive: " << vNext[0] << endl;
             state = Moving;
         }
         else
@@ -463,20 +463,20 @@ void Controller::autoMoving()
     }
     else
     {
-        // for (int i = 0; i < 6;i++)
-        // {
-        //     master.targData.targetPosition[i] = pos.targetPosition[i];
-        // }
+        for (int i = 0; i < 6;i++)
+        {
+            master.targData.targetPosition[i] = pos.targetPosition[i];
+        }
 
-        master.targData.targetPosition[0] = pos.targetPosition[0];
+        // master.targData.targetPosition[0] = pos.targetPosition[0];
         
 
-        q = increment2jointangle(master.recvData.actualPosition);
-        v = increVel2jointVel(master.recvData.actualVelocity);
-        torque = increTor2jointTor(master.recvData.actualTorque);
-        qBuff.push(q);
-        qdBuff.push(v);
-        TorqueBuff.push(torque);
+        // q = increment2jointangle(master.recvData.actualPosition);
+        // v = increVel2jointVel(master.recvData.actualVelocity);
+        // torque = increTor2jointTor(master.recvData.actualTorque);
+        // qBuff.push(q);
+        // qdBuff.push(v);
+        // TorqueBuff.push(torque);
 
         // state = Active;
     }
